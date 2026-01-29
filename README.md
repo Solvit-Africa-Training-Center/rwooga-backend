@@ -14,14 +14,44 @@ This is a Django-based web application designed to manage accounts, orders, pric
 
 ## Project Structure
 ```
-manage.py
-requirements.txt
-accounts/
-orders/
-pricing/
-products/
-rwooga/
-utils/
+Project Structure
+rwooga_backend/
+│
+├── accounts/          # Authentication & user profiles
+│   ├── models.py
+│   ├── serializers.py
+│   ├── permissions.py
+│   ├── views.py
+│   ├── urls.py
+│
+├── products/           # Products & categories
+│   ├── models.py
+│   ├── serializers.py
+│   ├── views.py
+│   ├── urls.py
+│
+├── orders/              # Shopping cart logic
+│   ├── models.py
+│   ├── serializers.py
+│   ├── views.py
+│
+├── pricing/              # Control Products discount 
+│   ├── models.py
+│   ├── serializers.py
+│   ├── views.py
+├── static/            # Data Files
+│
+├── rwooga/  # Project settings
+│   ├── settings.py
+│   ├── urls.py               # URLs Routing
+├── utils/             
+│   ├──                    # Email and Verification Code Sending
+│   ├── 
+│   ├── 
+├── .env                     # Environment variables 
+├── .gitignore
+├── requirements.txt        # Dependencies
+└── manage.py
 ```
 - `manage.py`: Django's command-line utility for administrative tasks.
 - `requirements.txt`: Lists the Python dependencies for the project.
