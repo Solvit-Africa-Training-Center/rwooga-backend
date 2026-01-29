@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'pricing',
     'products',
 ]
-# AUTH_USER_MODEL = 'accounts.User'
+AUTH_USER_MODEL = 'accounts.User'
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -169,4 +169,12 @@ SIMPLE_JWT = {
     'USER_ID_CLAIM': 'user_id',
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
+}
+
+# API Documentation Configuration
+SPECTACULAR_SETTINGS = {
+    'TITLE': ' Backend API for Rwooga 3D services and portfolio website ',
+    'DESCRIPTION': 'API for user authentication: registration, login, logout, fully CRUD operations by admin only,profile update for authenticated user, password change for authenticated user,forgot password, email verification code',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
