@@ -102,7 +102,7 @@ class EmailVerificationTokenAdmin(admin.ModelAdmin):
     list_display = [
         'user',
         'token',
-        'created_at',
+        'date_joined',
         'expires_at',
         'is_used',
         'is_valid_status'
@@ -110,7 +110,7 @@ class EmailVerificationTokenAdmin(admin.ModelAdmin):
     
     list_filter = [
         'is_used',
-        'created_at',
+        'date_joined',
         'expires_at'
     ]
     
@@ -121,7 +121,7 @@ class EmailVerificationTokenAdmin(admin.ModelAdmin):
     
     readonly_fields = [
         'token',
-        'created_at',
+        'date_joined',
         'expires_at'
     ]
     

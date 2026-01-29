@@ -126,11 +126,13 @@ class User(AbstractBaseUser, PermissionsMixin):
 class VerificationCode(models.Model):    
     
     REGISTER = 'REGISTER'
+    EMAIL_VERIFICATION = 'EMAIL_VERIFICATION'
     RESET_PASSWORD = 'RESET_PASSWORD'
     CHANGE_EMAIL = 'CHANGE_EMAIL'
 
     LABEL_CHOICES = [
         (REGISTER, 'Register'),
+        (EMAIL_VERIFICATION, 'Email Verification'),
         (RESET_PASSWORD, 'Reset Password'),
         (CHANGE_EMAIL, 'Change Email'),
     ]

@@ -39,17 +39,26 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             'full_name','email','phone_number','password','password_confirm'
         ]
     
-    def validate(self, attrs):
+    def validate_phone_number(self, value):      
+        phone = value.replace(' ', '').replace('-', '')        
+       
+        if phone.startswith('+250'):
+            phone = '0' + phone[4:]        
+       
+        if len(phone) == 9 and not phone.startswith('0'):
+            phone = '0' + phone        
+       
+        if not (len(phone) == 10 and phone.startswith('0') and phone.isdigit()):
+            raise serializers.ValidationError(
+                "Phone number must be 10 digits starting with 0, or in +250 format"
+            )
+        
+        return phone
+    
+    def validate(self, attrs):        
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
-        return attrs
-    def validate(self, email):
-        email_regex = RegexValidator(regex=r'^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$', message="Invalid email format")
-        email = serializers.EmailField(validators=[email_regex])
-        
-    def validate(self, phone):
-        phone_regex = RegexValidator(regex=r'^\+?1?\d{13}$', message="Phone number must be entered in the format: '+2507800000'")
-        phone = serializers.CharField(validators=[phone_regex], max_length=13)
+        return attrs 
     
     def create(self, validated_data):
         validated_data.pop('password_confirm')

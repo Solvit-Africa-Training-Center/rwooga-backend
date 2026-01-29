@@ -30,8 +30,8 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     filterset_fields = [ 'is_active', 'is_staff']
     search_fields = ['email', 'full_name', 'phone_number']
-    ordering_fields = ['created_at', 'full_name', 'email']
-    ordering = ['-created_at']
+    ordering_fields = ['date_joined', 'full_name', 'email']
+    ordering = ['-date_joined']
 
     def get_permissions(self):
         if self.action == "create":
