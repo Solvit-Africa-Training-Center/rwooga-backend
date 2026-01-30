@@ -1,3 +1,4 @@
+import random
 from django.contrib.auth import get_user_model
 from rest_framework import viewsets, status
 from django.core.mail import send_mail
@@ -7,7 +8,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
-import random
+
 
 from accounts.serializers import CustomTokenObtainPairSerializer, UserSerializer
 from .permissions import IsAdmin, IsOwnerOrAdmin
@@ -107,8 +108,7 @@ class AuthViewSet(viewsets.GenericViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=['post'])
-    def login(self, request):
-        """Login user with email/username and password"""
+    def login(self, request):      
         serializer = UserLoginSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             user = serializer.validated_data['user']
@@ -122,8 +122,7 @@ class AuthViewSet(viewsets.GenericViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
-    def logout(self, request):
-        """Logout user by blacklisting refresh token"""
+    def logout(self, request):     
         try:
             refresh_token = request.data.get('refresh')
             token = RefreshToken(refresh_token)
@@ -133,22 +132,14 @@ class AuthViewSet(viewsets.GenericViewSet):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=['post'])
-    def password_reset_request(self, request):
-        """Request password reset - sends verification code"""
+    def password_reset_request(self, request):   
         serializer = PasswordResetRequestSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.validated_data['email']
             try:
                 user = User.objects.get(email=email)
-                code = str(random.randint(100000, 999999))
-                
-                # You'll need to implement VerificationCode model
-                # VerificationCode.objects.create(
-                #     user=user,
-                #     email=email,
-                #     code=code,
-                #     label=VerificationCode.RESET_PASSWORD
-                # )
+                code = str(random.randint(100000, 999999))               
+               
                 
                 return Response({
                     'status': 'Verification code sent',
@@ -162,7 +153,7 @@ class AuthViewSet(viewsets.GenericViewSet):
     
     @action(detail=False, methods=['post'])
     def password_reset_confirm(self, request):
-        """Confirm password reset with verification code"""
+        
         serializer = PasswordResetConfirmSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.validated_data['email']
@@ -171,9 +162,7 @@ class AuthViewSet(viewsets.GenericViewSet):
             
             try:
                 user = User.objects.get(email=email)
-                # Verify code logic here
-                # verification = VerificationCode.objects.get(...)
-                
+               
                 user.set_password(new_password)
                 user.save()
                 
@@ -188,21 +177,19 @@ class AuthViewSet(viewsets.GenericViewSet):
 
 
 class ProfileViewSet(viewsets.GenericViewSet):
-    """
-    ViewSet for user profile operations
-    """
+   
     permission_classes = [IsAuthenticated]
     serializer_class = UserProfileSerializer
     
     @action(detail=False, methods=['get'])
     def me(self, request):
-        """Get current user profile"""
+       
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
     
     @action(detail=False, methods=['put', 'patch'])
     def update_profile(self, request):
-        """Update current user profile"""
+       
         serializer = self.get_serializer(request.user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -211,7 +198,7 @@ class ProfileViewSet(viewsets.GenericViewSet):
     
     @action(detail=False, methods=['post'])
     def change_password(self, request):
-        """Change current user password"""
+      
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             user = request.user
