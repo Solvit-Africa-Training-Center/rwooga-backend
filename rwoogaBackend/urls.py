@@ -1,13 +1,13 @@
+from django.contrib import admin
 from django.urls import path, include
-from rest_framework import routers
-from accounts.views import UserViewSet, LoginMixin, AuthViewSet, ProfileViewSet
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
-route = routers.DefaultRouter()
-route.register('user', UserViewSet, basename='user')
-route.register('login', LoginMixin, basename='login')
-route.register('auth', AuthViewSet, basename='auth')
-route.register('profile', ProfileViewSet, basename='profile')
 
 urlpatterns = [
-    path('', include(route.urls)),
+    path('admin/', admin.site.urls),
+    path('', include('accounts.urls')),   
+    # API Documentation
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
