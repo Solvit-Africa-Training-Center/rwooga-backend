@@ -17,15 +17,11 @@ class UserSerializer(serializers.ModelSerializer):
             'phone_number', 'user_type', 'is_active', 'is_staff', 'is_admin', 
             'date_joined', 'updated_at' 
         ]
-        read_only_fields = ['id', 'date_joined', 'updated_at', 'is_staff', 'is_admin']
+        read_only_fields = ['id', 'date_joined', 'updated_at', 'is_staff', 'is_admin'] 
         
+        def get_full_name(self, obj):
+            return obj.get_full_name()
      
-      
-       
-    
-    def get_full_name(self, obj):
-        return obj.get_full_name()
-
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     
@@ -49,7 +45,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
        
         if not (len(phone) == 10 and phone.startswith('0') and phone.isdigit()):
             raise serializers.ValidationError(
-                "Phone number must be 10 digits starting with 0, or in +250 format"
+                
             )
         
         return phone
@@ -162,8 +158,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         User.objects.filter(id=user.id).update(
             last_login=datetime.datetime.now())
         user.save()
-        token = super().get_token(user)
-        # Add custom claims
+        token = super().get_token(user)       
         token["full_name"] = user.full_name
         token["phone_number"] = user.phone_number
         token["email"] = user.email

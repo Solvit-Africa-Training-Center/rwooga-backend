@@ -91,60 +91,6 @@ class UserAdmin(BaseUserAdmin):
         return obj.get_full_name()
     get_full_name.short_description = 'Full Name'
 
-
-
-'''
-
-@admin.register(EmailVerificationToken)
-class EmailVerificationTokenAdmin(admin.ModelAdmin):
-    """Email Verification Token Admin"""
-    
-    list_display = [
-        'user',
-        'token',
-        'date_joined',
-        'expires_at',
-        'is_used',
-        'is_valid_status'
-    ]
-    
-    list_filter = [
-        'is_used',
-        'date_joined',
-        'expires_at'
-    ]
-    
-    search_fields = [
-        'user__email',
-        'token'
-    ]
-    
-    readonly_fields = [
-        'token',
-        'date_joined',
-        'expires_at'
-    ]
-    
-    def is_valid_status(self, obj):
-        """Display if token is valid"""
-        if obj.is_valid():
-            return format_html('<span style="color: green;">✓ Valid</span>')
-        return format_html('<span style="color: red;">✗ Invalid/Expired</span>')
-    is_valid_status.short_description = 'Status'
-    '''
-
-
-
-
-
-    
-  
-    
-    
-
-        
-
-
 # Customize admin site headers
 admin.site.site_header = "Rwooga Administration"
 admin.site.site_title = "Rwooga Admin Portal"
