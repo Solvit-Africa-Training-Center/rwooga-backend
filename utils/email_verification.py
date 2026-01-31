@@ -47,7 +47,7 @@ def send_registration_verification(user):
             'code': code,
             'company_name': getattr(settings, 'COMPANY_NAME', 'Rwooga'),
             'support_email': getattr(settings, 'SUPPORT_EMAIL', 'support@rwooga.com'),
-            'expiry_minutes': getattr(settings, 'VERIFICATION_CODE_EXPIRY_MINUTES', 15),
+            'expiry_minutes': getattr(settings, 'VERIFICATION_CODE_EXPIRY_MINUTES', 10),
         }
         
         # Send email
@@ -111,7 +111,7 @@ def send_password_reset_verification(email: str):
             'code': code,
             'company_name': getattr(settings, 'COMPANY_NAME', 'Rwooga'),
             'support_email': getattr(settings, 'SUPPORT_EMAIL', 'support@rwooga.com'),
-            'expiry_minutes': getattr(settings, 'VERIFICATION_CODE_EXPIRY_MINUTES', 15),
+            'expiry_minutes': getattr(settings, 'VERIFICATION_CODE_EXPIRY_MINUTES', 10),
         }
         
         # Send email
@@ -191,7 +191,7 @@ def cleanup_expired_codes() -> int:
     from django.utils import timezone
     from datetime import timedelta
     
-    expiry_minutes = getattr(settings, 'VERIFICATION_CODE_EXPIRY_MINUTES', 15)
+    expiry_minutes = getattr(settings, 'VERIFICATION_CODE_EXPIRY_MINUTES', 10)
     cutoff_time = timezone.now() - timedelta(minutes=expiry_minutes)
     
     deleted_count, _ = VerificationCode.objects.filter(
