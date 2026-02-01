@@ -146,6 +146,15 @@ CORS_ALLOWED_ORIGINS = [
 ]
 CORS_ALLOW_CREDENTIALS = True
 
+
+
+FRONTEND_URL = "http://localhost:3000"  
+COMPANY_NAME = "Rwooga"                 
+SUPPORT_EMAIL = "support@rwooga.com"
+VERIFICATION_CODE_EXPIRY_MINUTES = 10 
+
+
+
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
