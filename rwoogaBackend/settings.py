@@ -145,12 +145,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://www.rwooga.com",
 ]
 CORS_ALLOW_CREDENTIALS = True
 
 
 
-SITE_URL = "http://localhost:3000"  
+SITE_URL =  "https://www.rwooga.com"    
 COMPANY_NAME = "Rwooga"                 
 SUPPORT_EMAIL = "support@rwooga.com"
 VERIFICATION_CODE_EXPIRY_MINUTES = 10 
