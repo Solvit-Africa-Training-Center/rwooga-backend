@@ -1,4 +1,5 @@
 
+
 import os
 from decouple import config
 from dotenv import load_dotenv
@@ -103,7 +104,6 @@ DATABASES = {
        'NAME': config('NAME'),
         'USER': config('USER'),
         'PASSWORD': config('PASSWORD'),
-        'PORT': config('PORT'),
         'HOST': config('HOST'),
         'OPTIONS': {'sslmode': 'require'},
     }
