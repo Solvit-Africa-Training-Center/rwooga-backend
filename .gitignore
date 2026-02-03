@@ -28,9 +28,9 @@ venv.bak/
 
 # Django
 *.log
-/media/
-/staticfiles/
-/static/
+# /media/
+# /staticfiles/
+# /static/
 local_settings.py
 
 # PostgreSQL - database dumps and backups
