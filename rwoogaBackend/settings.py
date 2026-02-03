@@ -165,12 +165,13 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://www.rwooga.com",
+    "https://rwooga-project.vercel.app/",
 ]
 CORS_ALLOW_CREDENTIALS = True
 
 
 
-SITE_URL =  "http://localhost:3000",   
+SITE_URL =  "https://rwooga-project.vercel.app/"   
 COMPANY_NAME = "Rwooga"                 
 SUPPORT_EMAIL = "support@rwooga.com"
 VERIFICATION_CODE_EXPIRY_MINUTES = 10 
