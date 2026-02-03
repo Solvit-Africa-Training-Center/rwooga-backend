@@ -90,6 +90,7 @@ DATABASES = {
         'NAME': config('DB_NAME'),
         'USER': config('DB_USER'),
         'PASSWORD': config('DB_PASSWORD'),
+        'PORT': config('PORT'),
         'HOST': config('DB_HOST', default='localhost'),
         'PORT': config('DB_PORT', cast=int, default=5432),
     }
@@ -102,6 +103,7 @@ DATABASES = {
        'NAME': config('NAME'),
         'USER': config('USER'),
         'PASSWORD': config('PASSWORD'),
+        'PORT': config('PORT'),
         'HOST': config('HOST'),
         'OPTIONS': {'sslmode': 'require'},
     }
