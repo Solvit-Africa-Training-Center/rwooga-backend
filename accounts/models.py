@@ -57,7 +57,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         (CUSTOMER, 'Customer'),
     ]
     
-    # UUID Primary Key
+    
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -68,13 +68,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(
         _('email address'),
         unique=True,
+        null=False,
+        blank=False,
         error_messages={
             'unique': _("A user with that email already exists."),
         }
     )
     
     phone_number = models.CharField(
-        max_length=10,  
+        max_length=10,
         unique=True,
     )
     
@@ -86,11 +88,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         default=CUSTOMER 
     )    
     
-    is_active = models.BooleanField(_('active'), default=True)
+    is_active = models.BooleanField(_('active'), default=False)
     is_staff = models.BooleanField(_('staff status'), default=False)  
     
     date_joined = models.DateTimeField(_('date joined'), default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True)  
+    updated_at = models.DateTimeField(auto_now=True)
+    last_login = models.DateTimeField(_('last login'), blank=True, null=True)  
     
     objects = UserManager()    
     
@@ -153,6 +156,19 @@ class VerificationCode(models.Model):
     email = models.EmailField()
     is_used = models.BooleanField(default=False)
     created_on = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Verification Code'
+        verbose_name_plural = 'Verification Codes'
+        ordering = ['-created_on']
+        indexes = [
+            models.Index(fields=['token']),
+            models.Index(fields=['email', 'is_used']),
+            models.Index(fields=['created_on']),
+        ]
+
+    def __str__(self):
+        return f"{self.email} - {self.label} - {'Used' if self.is_used else 'Active'}"
 
     @property
     def is_expired(self):

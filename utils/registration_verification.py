@@ -1,7 +1,6 @@
 from django.conf import settings
 from utils.send_email import send_email_custom
 
-
 def send_registration_verification(user):
     from accounts.models import VerificationCode
 
@@ -10,10 +9,10 @@ def send_registration_verification(user):
         email=user.email,
         label=VerificationCode.REGISTER
     )
-
+   
     verify_url = (
         f"{settings.SITE_URL}"
-        f"/verify-email?token={verification.token}"
+        f"/verify-email?token={verification.token}&email={user.email}"
     )
 
     context = {
