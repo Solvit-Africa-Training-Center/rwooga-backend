@@ -93,11 +93,11 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': config('DB_NAME'),
-            'USER': config('DB_USER'),
-            'PASSWORD': config('DB_PASSWORD'),
-            'HOST': config('DB_HOST', default='localhost'),
-            'PORT': config('DB_PORT', cast=int, default=5432),
+            'NAME': config('NAME'),
+            'USER': config('USER'),
+            'PASSWORD': config('PASSWORD'),
+            'HOST': config('HOST', default='localhost'),
+            'PORT': config('PORT', cast=int, default=5432),
             'OPTIONS': {
                 'sslmode': 'require',  
             },
@@ -166,13 +166,13 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "https://rwooga-project.vercel.app",
     "https://www.rwooga.com",
-    "https://rwooga-project.vercel.app/",
+    "https://rwooga-project.vercel.app",
 ]
 CORS_ALLOW_CREDENTIALS = True
 
 
 
-SITE_URL =  "https://rwooga-project.vercel.app/"   
+SITE_URL =  "https://rwooga-project.vercel.app"   
 COMPANY_NAME = "Rwooga"                 
 SUPPORT_EMAIL = "support@rwooga.com"
 VERIFICATION_CODE_EXPIRY_MINUTES = 10 
