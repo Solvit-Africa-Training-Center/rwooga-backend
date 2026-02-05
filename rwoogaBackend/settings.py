@@ -14,13 +14,7 @@ load_dotenv()
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-    'delicious-elk-rwooga-9385c071.koyeb.app'
-    "rwooga-project.vercel.app",
-    "www.rwooga.com",
-]
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',')
 
 # Application definition
 INSTALLED_APPS = [
