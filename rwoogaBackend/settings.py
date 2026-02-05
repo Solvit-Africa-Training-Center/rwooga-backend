@@ -182,42 +182,6 @@ INSTAGRAM_ICON_URL = config('INSTAGRAM_ICON_URL', default='')
 TWITTER_ICON_URL = config('TWITTER_ICON_URL', default='')
 TIKTOK_ICON_URL = config('TIKTOK_ICON_URL', default='')
 
-# Security Settings
-MAX_LOGIN_ATTEMPTS = config('MAX_LOGIN_ATTEMPTS', default=5, cast=int)
-ACCOUNT_LOCKOUT_MINUTES = config('ACCOUNT_LOCKOUT_MINUTES', default=30, cast=int)
-VERIFICATION_RESEND_COOLDOWN_MINUTES = config('VERIFICATION_RESEND_COOLDOWN_MINUTES', default=2, cast=int)
-
-# Session Settings
-SESSION_COOKIE_AGE = 86400  # 24 hours
-SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'Lax'
-
-# CSRF Settings
-CSRF_COOKIE_HTTPONLY = True
-CSRF_COOKIE_SAMESITE = 'Lax'
-
-# Security Headers
-SECURE_BROWSER_XSS_FILTER = True
-SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = 'DENY'
-
-# Production Security (only when DEBUG=False)
-if not DEBUG:
-   
-    SECURE_SSL_REDIRECT = False
-    
-    # Trust the X-Forwarded-Proto header from Koyeb's proxy
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    
-    # HSTS Settings - Django will add HSTS headers to responses
-    SECURE_HSTS_SECONDS = 31536000
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-    
-    # Secure cookies
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-
 # REST Framework Configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
