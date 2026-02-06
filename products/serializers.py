@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
-from .models import ServiceCategory, Product, ProductMedia, Feedback
+from .models import CustomRequest, ServiceCategory, Product, ProductMedia, Feedback
 
 class ServiceCategorySerializer(serializers.ModelSerializer):
     product_count = serializers.SerializerMethodField()
@@ -8,8 +8,14 @@ class ServiceCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceCategory
         fields = [
-            'id', 'name', 'slug', 'description', 'is_active', 
-            'display_order', 'created_at', 'updated_at', 'product_count'
+            'id', 
+            'name', 
+            'slug', 
+            'description', 
+            'is_active', 
+            'created_at', 
+            'updated_at', 
+            'product_count'
         ]
     
     @extend_schema_field(serializers.IntegerField())
@@ -82,3 +88,16 @@ class ProductListSerializer(serializers.ModelSerializer):
         if first_media and first_media.image:
             return first_media.image.url
         return None
+
+class CustomRequestSerializer(serializers.ModelSerializer):
+    service_category_name = serializers.CharField(source='service_category.name', read_only=True)
+    
+    class Meta:
+        model = CustomRequest
+        fields = [
+            'id', 'client_name', 'client_email', 'client_phone',
+            'service_category', 'service_category_name', 'title', 
+            'description', 'reference_file', 'budget', 'status',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'status', 'created_at', 'updated_at']

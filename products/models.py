@@ -8,16 +8,18 @@ from django.utils.text import slugify
 class ServiceCategory(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100, unique=True)
-    slug = models.SlugField(max_length=100, unique=True)
-    description = models.TextField(blank=True)
-    #icon = models.CharField(max_length=100, blank=True)
+    slug = models.SlugField(max_length=100, blank=True, null=True)
+    description = models.TextField( unique=True)
+    
     is_active = models.BooleanField(default=True)
-    display_order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
 
     class Meta:
-        ordering = ["display_order", "name"]
+        ordering = [ "name"]
+        verbose_name = "Service Category"
+        verbose_name_plural = "Service Categories"
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -31,22 +33,21 @@ class ServiceCategory(models.Model):
 class Product(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     category = models.ForeignKey(ServiceCategory, on_delete=models.PROTECT, related_name="products")
-    name = models.CharField(max_length=200)
-    slug = models.SlugField(max_length=200, unique=True)
-    short_description = models.CharField(max_length=255)
-    detailed_description = models.TextField()
-    unit_price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
-    currency = models.CharField(max_length=3, default="RWF")
+    name = models.CharField(max_length=200, unique=True)
+    slug = models.SlugField(max_length=200, blank=True, null=True)
+    short_description = models.CharField(max_length=255, unique=True)
+    detailed_description = models.TextField(max_length=2000, null=True, blank=True)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)], blank=True, null=True)
+    currency = models.CharField(max_length=3, default="RWF", blank=True)
     material = models.CharField(max_length=100, blank=True)
 
-    length = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)])
-    width = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)])
-    height = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)])
+    length = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)], blank=True, null=True)
+    width = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)], blank=True, null=True)
+    height = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)], blank=True, null=True)
 
-    product_volume = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
-    measurement_unit = models.CharField(max_length=10, default="cm")
-    
-
+    #product_volume = models.DecimalField(max_digits=10, decimal_places=2, editable=False, null=True, blank=True)
+    measurement_unit = models.CharField(max_length=10, default="cm", blank=True)
+ 
     published = models.BooleanField(default=False)
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -57,6 +58,9 @@ class Product(models.Model):
     available_colors = models.CharField(max_length=200, blank=True, help_text="e.g., Red, Blue, Green")
     available_materials = models.CharField(max_length=200, blank=True, help_text="e.g., PLA, ABS, Resin")
     
+    class Meta:
+        verbose_name = "Product"
+        verbose_name_plural = "Products"
 
     @property
     def product_volume(self):
@@ -106,8 +110,9 @@ class ProductMedia(models.Model):
 
     class Meta:
         ordering = ['display_order']
+        verbose_name = "Product Media"
+        verbose_name_plural = "Product Media"
     
-
 
 class Feedback(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -118,4 +123,65 @@ class Feedback(models.Model):
     published = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="feedbacks")
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Feedback"
+        verbose_name_plural = "Feedback"
+
+#customer request
+class CustomRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+
+    client_name = models.CharField(max_length=200)
+    client_email = models.EmailField()
+    client_phone = models.CharField(max_length=20)
+    
+   
+    service_category = models.ForeignKey(
+        ServiceCategory, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        help_text="Optional: What service is this related to?"
+    )
+    title = models.CharField(max_length=200, help_text="Brief title of what you need")
+    description = models.TextField(help_text="Detailed description of your request")
+    
+    
+    reference_file = models.FileField(
+        upload_to="custom_requests/", 
+        blank=True, 
+        null=True,
+        help_text="Upload reference images or sketches"
+    )
+    
+    budget = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text="Your approximate budget in RWF"
+    )
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Custom Request"
+        verbose_name_plural = "Custom Requests"
+
+    def __str__(self):
+        return f"{self.client_name} - {self.title}"
+
 

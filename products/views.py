@@ -3,9 +3,11 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Avg
-from .models import ServiceCategory, Product, ProductMedia, Feedback
-from .permissions import IsAdminOrStaffOrReadOnly, IsStaffOnly, CustomerCanCreateFeedback
+from .models import ServiceCategory, Product, ProductMedia, Feedback, CustomRequest
+from .permissions import AnyoneCanCreateRequest, AnyoneCanCreateRequest, IsAdminOrStaffOrReadOnly, IsStaffOnly, CustomerCanCreateFeedback
 from .serializers import (
+    CustomRequestSerializer,
+    CustomRequestSerializer,
     ServiceCategorySerializer,
     ProductSerializer,
     ProductListSerializer,
@@ -112,5 +114,45 @@ class FeedbackViewSet(viewsets.ModelViewSet):
             "published": feedback.published,
             "message": f"Feedback {'published' if feedback.published else 'unpublished'}"
         })
+
+class CustomRequestViewSet(viewsets.ModelViewSet):
+    queryset = CustomRequest.objects.all()
+    serializer_class = CustomRequestSerializer
+    permission_classes = [AnyoneCanCreateRequest]
     
+    def get_queryset(self):
+        qs = super().get_queryset()
+        
+        # Filter by status
+        status = self.request.query_params.get('status')
+        if status:
+            qs = qs.filter(status=status)
+        
+        # Filter by service category
+        category = self.request.query_params.get('category')
+        if category:
+            qs = qs.filter(service_category_id=category)
+        
+        return qs
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsStaffOnly])
+    def update_status(self, request, pk=None):
+        """Update request status (staff only)"""
+        custom_request = self.get_object()
+        new_status = request.data.get('status')
+        
+        if new_status not in ['pending', 'in_progress', 'completed', 'cancelled']:
+            return Response(
+                {"error": "Invalid status"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        custom_request.status = new_status
+        custom_request.save()
+        
+        return Response({
+            "status": custom_request.status,
+            "message": f"Request status updated to {new_status}"
+        })
+  
 

@@ -4,6 +4,7 @@ from .views import (
     ProductViewSet,
     ProductMediaViewSet,
     FeedbackViewSet,
+    CustomRequestViewSet,
 )
 
 router = DefaultRouter()
@@ -11,5 +12,6 @@ router.register('categories', ServiceCategoryViewSet)
 router.register('products', ProductViewSet)
 router.register('media', ProductMediaViewSet)
 router.register('feedback', FeedbackViewSet)
+router.register('custom-requests', CustomRequestViewSet)
 
 urlpatterns = router.urls

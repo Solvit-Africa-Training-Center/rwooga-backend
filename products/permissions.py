@@ -34,3 +34,14 @@ class CustomerCanCreateFeedback(permissions.BasePermission):
         
         # Only staff can update/delete feedback
         return request.user and request.user.is_authenticated and request.user.is_staff
+
+class AnyoneCanCreateRequest(permissions.BasePermission):
+    """
+    Anyone can create a custom request
+    Only staff can view all requests and update status
+    """
+    def has_permission(self, request, view):
+        # Anyone can create
+        if view.action == 'create':
+            return True
+        return request.user and request.user.is_authenticated and request.user.is_staff

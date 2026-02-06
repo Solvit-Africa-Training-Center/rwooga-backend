@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ServiceCategory, Product, ProductMedia, Feedback
+from .models import ServiceCategory, Product, ProductMedia, Feedback, CustomRequest
 
 
 class ProductMediaInline(admin.TabularInline):
@@ -14,10 +14,9 @@ class FeedbackInline(admin.TabularInline):
 
 @admin.register(ServiceCategory)
 class ServiceCategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'slug', 'is_active', 'display_order', 'created_at']
+    list_display = ['name', 'slug', 'is_active', 'created_at']
     list_filter = ['is_active']
     search_fields = ['name']
-    ordering = ['display_order']
     prepopulated_fields = {'slug': ('name',)}
 
 
@@ -74,3 +73,39 @@ class FeedbackAdmin(admin.ModelAdmin):
     def make_unpublished(self, request, queryset):
         queryset.update(published=False)
     make_unpublished.short_description = "Unpublish selected feedback"
+
+@admin.register(CustomRequest)
+class CustomRequestAdmin(admin.ModelAdmin):
+    list_display = ['client_name', 'title', 'service_category', 'status', 'created_at']
+    list_filter = ['status', 'service_category', 'created_at']
+    search_fields = ['client_name', 'client_email', 'title', 'description']
+    readonly_fields = ['created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Customer Information', {
+            'fields': ('client_name', 'client_email', 'client_phone')
+        }),
+        ('Request Details', {
+            'fields': ('service_category', 'title', 'description', 'reference_file', 'budget')
+        }),
+        ('Status & Notes', {
+            'fields': ('status',),
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at')
+        }),
+    )
+    
+    actions = ['mark_in_progress', 'mark_completed', 'mark_cancelled']
+    
+    def mark_in_progress(self, request, queryset):
+        queryset.update(status='in_progress')
+    mark_in_progress.short_description = "Mark as In Progress"
+    
+    def mark_completed(self, request, queryset):
+        queryset.update(status='completed')
+    mark_completed.short_description = "Mark as Completed"
+    
+    def mark_cancelled(self, request, queryset):
+        queryset.update(status='cancelled')
+    mark_cancelled.short_description = "Mark as Cancelled"
