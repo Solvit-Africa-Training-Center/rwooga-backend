@@ -149,6 +149,7 @@ CORS_ALLOW_CREDENTIALS = True
 # CSRF Settings
 CSRF_TRUSTED_ORIGINS = [
     "https://rwooga-project.vercel.app",
+    "http://localhost:3000",
     "https://www.rwooga.com",
     # "https://awful-carlina-solvitafrica-ac088785.koyeb.app",
     "https://delicious-elk-rwooga-9385c071.koyeb.app",
