@@ -2,9 +2,6 @@ from rest_framework import serializers
 from .models import ServiceCategory, Product, ProductMedia, Feedback, Discount, ProductDiscount
 
 
-
-
-
 class ServiceCategorySerializer(serializers.ModelSerializer):
     product_count = serializers.SerializerMethodField()
     
