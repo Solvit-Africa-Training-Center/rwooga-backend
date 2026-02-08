@@ -135,26 +135,20 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# CORS Configuration
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://rwooga-project.vercel.app",
-    "https://rwooga-frontend.vercel.app"
-    "https://www.rwooga.com", 
-    "https://modern-noemi-rwooga3dservices-e96463f8.koyeb.app",
+    "https://rwooga-frontend.vercel.app",
+    "https://modern-noemi-rwooga3dservices-e96463f8.koyeb.app",  
 ]
-CORS_ALLOW_CREDENTIALS = True
 
-# CSRF Settings
 CSRF_TRUSTED_ORIGINS = [
     "https://rwooga-project.vercel.app",
-    "https://rwooga-frontend.vercel.app"
-    "http://localhost:3000",
-    "https://www.rwooga.com", 
-    "https://modern-noemi-rwooga3dservices-e96463f8.koyeb.app",
+    "https://rwooga-frontend.vercel.app",
+    "http://localhost:3000",    
+    "https://modern-noemi-rwooga3dservices-e96463f8.koyeb.app",  
 ]
-
 # Site Configuration
 SITE_URL = config('SITE_URL', default='http://localhost:3000')
 COMPANY_NAME = config('COMPANY_NAME', default='Rwooga')
