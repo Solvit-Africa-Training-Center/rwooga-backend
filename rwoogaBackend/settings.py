@@ -33,7 +33,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'django_filters',
     'drf_spectacular',   
-    'accounts',
+    'accounts.apps.AccountsConfig',
     'orders',
     'pricing',
     'products',
