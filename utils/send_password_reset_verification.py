@@ -23,6 +23,7 @@ def send_password_reset_verification(user):
         "tiktok": settings.TIKTOK,
         "youtube_icon_url": settings.YOUTUBE_ICON_URL,
         "instagram_icon_url": settings.INSTAGRAM_ICON_URL,
+        "linkdin_icon_url" : settings.LINKDIN_ICON_URL,        
         "twitter_icon_url": settings.TWITTER_ICON_URL,
         "tiktok_icon_url": settings.TIKTOK_ICON_URL,
         "support_email": settings.SUPPORT_EMAIL,

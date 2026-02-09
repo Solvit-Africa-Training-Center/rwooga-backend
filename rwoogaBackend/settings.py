@@ -172,7 +172,7 @@ INSTAGRAM = config('INSTAGRAM', default='https://www.instagram.com')
 LINKDIN = config('LINKDIN',default='')
 TWITTER = config('TWITTER', default='https://www.x.com')
 TIKTOK = config('TIKTOK', default='https://www.tiktok.com')
-COMPANY_URL=config('COMPANY_NAME', default='')
+COMPANY_URL=config('COMPANY_URL', default='')
 
 # Logo and Icons
 COMPANY_LOGO_URL = config('COMPANY_LOGO_URL', default='')

@@ -19,6 +19,7 @@ def send_registration_verification(user):
         "company_logo_url": settings.COMPANY_LOGO_URL,
         "youtube_icon_url": settings.YOUTUBE_ICON_URL,
         "instagram_icon_url": settings.INSTAGRAM_ICON_URL,
+        "linkdin_icon_url" : settings.LINKDIN_ICON_URL,
         "twitter_icon_url": settings.TWITTER_ICON_URL,
         "tiktok_icon_url": settings.TIKTOK_ICON_URL,
         "youtube": settings.YOUTUBE,

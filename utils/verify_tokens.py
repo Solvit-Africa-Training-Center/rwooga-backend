@@ -18,22 +18,7 @@ def verify_email_token(token):
 
 
 def verify_password_reset_token(token):
-    """
-    Verify a password reset token
-    
-    Args:
-        token: The signed token from the password reset URL
-        
-    Returns:
-        tuple: (success: bool, user_id: str or None, error: str or None)
-        
-    Example:
-        success, user_id, error = verify_password_reset_token(token)
-        if success:
-            user = User.objects.get(id=user_id)
-            user.set_password(new_password)
-            user.save()
-    """
+   
     max_age_minutes = getattr(settings, 'PASSWORD_RESET_EXPIRY_MINUTES', 30)
     max_age_seconds = max_age_minutes * 60  # Convert minutes to seconds
     signer = TimestampSigner(salt='password-reset')
