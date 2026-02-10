@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
-from .models import CustomRequest, ServiceCategory, Product, ProductMedia, Feedback
+from .models import CustomRequest, ServiceCategory, Product, ProductMedia, Feedback, Wishlist
 
 class ServiceCategorySerializer(serializers.ModelSerializer):
     product_count = serializers.SerializerMethodField()
@@ -128,3 +128,27 @@ class CustomRequestSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'status', 'created_at', 'updated_at']
+
+
+class WishlistSerializer(serializers.ModelSerializer):
+    product_name = serializers.ReadOnlyField(source='product.name')
+    product_price = serializers.ReadOnlyField(source='product.unit_price')
+    product_thumbnail = serializers.SerializerMethodField()
+    user = serializers.UUIDField(source='user.id', read_only=True)
+    
+    class Meta:
+        model = Wishlist
+        fields = [
+            'id', 'user', 'product', 'product_name', 
+            'product_price', 'product_thumbnail', 'created_at'
+        ]
+        read_only_fields = ['id', 'user', 'created_at']
+    
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_product_thumbnail(self, obj) -> str:
+        first_media = obj.product.media.first()
+        if first_media and first_media.image:
+            return first_media.image.url
+        return None
+    
+    

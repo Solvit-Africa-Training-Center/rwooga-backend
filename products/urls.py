@@ -5,6 +5,7 @@ from .views import (
     ProductMediaViewSet,
     FeedbackViewSet,
     CustomRequestViewSet,
+    WishlistViewSet,
 )
 
 router = DefaultRouter()
@@ -13,5 +14,6 @@ router.register('products', ProductViewSet)
 router.register('media', ProductMediaViewSet)
 router.register('feedback', FeedbackViewSet)
 router.register('custom-requests', CustomRequestViewSet)
+router.register('wishlist', WishlistViewSet, basename='wishlist')
 
 urlpatterns = router.urls

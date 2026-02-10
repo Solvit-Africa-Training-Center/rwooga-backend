@@ -46,3 +46,13 @@ class AnyoneCanCreateRequest(permissions.BasePermission):
         if view.action == 'create':
             return True
         return request.user and request.user.is_authenticated and request.user.is_staff
+    
+class IsOwnerOnly(permissions.BasePermission):
+    """
+    Users can only access their own wishlist
+    """
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated
+    
+    def has_object_permission(self, request, view, obj):
+        return obj.user == request.user

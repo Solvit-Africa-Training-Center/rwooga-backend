@@ -3,8 +3,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Avg
-from .models import ServiceCategory, Product, ProductMedia, Feedback, CustomRequest
-from .permissions import AnyoneCanCreateRequest, AnyoneCanCreateRequest, IsAdminOrStaffOrReadOnly, IsStaffOnly, CustomerCanCreateFeedback
+from .models import ServiceCategory, Product, ProductMedia, Feedback, CustomRequest, Wishlist
+from .permissions import AnyoneCanCreateRequest, AnyoneCanCreateRequest, IsAdminOrStaffOrReadOnly, IsOwnerOnly, IsStaffOnly, CustomerCanCreateFeedback
 from .serializers import (
     CustomRequestSerializer,
     CustomRequestSerializer,
@@ -13,6 +13,7 @@ from .serializers import (
     ProductListSerializer,
     ProductMediaSerializer,
     FeedbackSerializer,
+    WishlistSerializer,
 )
 
 
@@ -147,3 +148,53 @@ class CustomRequestViewSet(viewsets.ModelViewSet):
         })
   
 
+class WishlistViewSet(viewsets.ModelViewSet):
+    serializer_class = WishlistSerializer
+    permission_classes = [IsOwnerOnly]
+    
+    def get_queryset(self):
+        # Users only see their own wishlist
+        return Wishlist.objects.filter(user=self.request.user)
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+    
+    @action(detail=False, methods=['post'])
+    def toggle(self, request):
+        """Add or remove product from wishlist"""
+        product_id = request.data.get('product')
+        
+        if not product_id:
+            return Response(
+                {"error": "Product ID is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            return Response(
+                {"error": "Product not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Check if already in wishlist
+        wishlist_item = Wishlist.objects.filter(
+            user=request.user, 
+            product=product
+        ).first()
+        
+        if wishlist_item:
+            # Remove from wishlist
+            wishlist_item.delete()
+            return Response({
+                "message": "Removed from wishlist",
+                "in_wishlist": False
+            })
+        else:
+            # Add to wishlist
+            Wishlist.objects.create(user=request.user, product=product)
+            return Response({
+                "message": "Added to wishlist",
+                "in_wishlist": True
+            }, status=status.HTTP_201_CREATED)

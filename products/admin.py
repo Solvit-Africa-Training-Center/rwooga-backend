@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ServiceCategory, Product, ProductMedia, Feedback, CustomRequest
+from .models import ServiceCategory, Product, ProductMedia, Feedback, CustomRequest, Wishlist
 
 
 class ProductMediaInline(admin.TabularInline):
@@ -109,3 +109,11 @@ class CustomRequestAdmin(admin.ModelAdmin):
     def mark_cancelled(self, request, queryset):
         queryset.update(status='cancelled')
     mark_cancelled.short_description = "Mark as Cancelled"
+
+
+@admin.register(Wishlist)
+class WishlistAdmin(admin.ModelAdmin):
+    list_display = ['user', 'product', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['user__full_name', 'user__email', 'product__name']
+    readonly_fields = ['created_at']
