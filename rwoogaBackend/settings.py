@@ -253,9 +253,9 @@ LOGGING = {
         },
     },
     'loggers': {
-      
+
         'root': {
-            'handlers': ['consoles',],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },
