@@ -121,7 +121,11 @@ class WishlistAdmin(admin.ModelAdmin):
     search_fields = ['user__full_name', 'user__email']
     readonly_fields = ['created_at', 'updated_at']
     inlines = [WishlistItemInline]
-
+    
+    def item_count(self, obj):
+        return obj.items.count()
+    
+    item_count.short_description = 'Items'  
 @admin.register(WishlistItem)
 class WishlistItemAdmin(admin.ModelAdmin):
     list_display = ['wishlist', 'product', 'created_at']
