@@ -91,6 +91,7 @@ class DiscountAdmin(admin.ModelAdmin):
 @admin.register(ProductDiscount)
 class ProductDiscountAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "product",
         "discount",
         "is_valid",
