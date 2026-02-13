@@ -11,6 +11,7 @@ class UserAdmin(BaseUserAdmin):
 
     
     list_display = [
+        'id',
         'email',
         'get_full_name',
         'phone_number',
@@ -95,6 +96,7 @@ class VerificationCodeAdmin(admin.ModelAdmin):
         'code',
         'created_on',
         'user',
+        'user_id'
     ]
     
     readonly_fields = [
