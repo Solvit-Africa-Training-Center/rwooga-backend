@@ -100,15 +100,15 @@ class CustomRequestAdmin(admin.ModelAdmin):
     actions = ['mark_in_progress', 'mark_completed', 'mark_cancelled']
     
     def mark_in_progress(self, request, queryset):
-        queryset.update(status='in_progress')
+        queryset.update(status='IN_PROGRESS')
     mark_in_progress.short_description = "Mark as In Progress"
     
     def mark_completed(self, request, queryset):
-        queryset.update(status='completed')
+        queryset.update(status='COMPLETED')
     mark_completed.short_description = "Mark as Completed"
     
     def mark_cancelled(self, request, queryset):
-        queryset.update(status='cancelled')
+        queryset.update(status='CANCELLED')
     mark_cancelled.short_description = "Mark as Cancelled"
 
 
@@ -120,9 +120,9 @@ class WishlistItemInline(admin.TabularInline):
 
 @admin.register(Wishlist)
 class WishlistAdmin(admin.ModelAdmin):
-    list_display = ['user', 'get_item_count', 'created_at']
+    list_display = ['user', 'get_item_count', 'created_at', 'updated_at']
     search_fields = ['user__full_name', 'user__email']
-    readonly_fields = ['created_at']
+    readonly_fields = ['created_at', 'updated_at']
     inlines = [WishlistItemInline]
     
     def get_item_count(self, obj):
