@@ -149,10 +149,10 @@ class VerificationCode(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='verification_tokens'
+        related_name='verification_codes'
     )
 
-    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    
     code = models.CharField(max_length=6, null=True, blank=True, db_index=True)  
     label = models.CharField(max_length=30, choices=LABEL_CHOICES)
     email = models.EmailField()
@@ -164,7 +164,7 @@ class VerificationCode(models.Model):
         verbose_name_plural = 'Verification Codes'
         ordering = ['-created_on']
         indexes = [
-            models.Index(fields=['token']),
+            models.Index(fields=['code']),
             models.Index(fields=['email', 'is_verified']),
             models.Index(fields=['created_on']),
         ]
