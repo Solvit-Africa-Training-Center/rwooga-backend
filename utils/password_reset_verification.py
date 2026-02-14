@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.utils import timezone
 from utils.send_email import send_email_custom
 import logging
 
@@ -49,7 +50,8 @@ def send_password_reset_verification(user):
         "linkedin_icon_url": settings.LINKEDIN_ICON_URL,  
         
         "support_email": settings.SUPPORT_EMAIL,
-        "expiry_minutes": settings.VERIFICATION_CODE_EXPIRY_MINUTES,  
+        "expiry_minutes": settings.VERIFICATION_CODE_EXPIRY_MINUTES, 
+        "current_year": timezone.now().year,  
     }
 
     send_email_custom(
