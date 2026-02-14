@@ -19,8 +19,7 @@ from accounts.serializers import (
     VerifyEmailSerializer,
 )
 from accounts.permissions import IsAdmin, IsOwnerOrAdmin
-from utils.registration_verification import send_registration_verification
-from utils.send_password_reset_verification import send_password_reset_verification
+from utils import send_password_reset_verification, send_registration_verification
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
