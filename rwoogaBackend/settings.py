@@ -73,7 +73,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'rwoogaBackend.wsgi.application'
 
-# Database Configuration - Optimized for Koyeb + Supabase
+# Database Configuration for production
 if config('DATABASE_URL', default=None):
     DATABASES = {
         'default': dj_database_url.config(
@@ -135,6 +135,7 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 
 # Email context variables
+COMPANY_URL = config('COMPANY_URL', default='')
 COMPANY_LOGO_URL = config('COMPANY_LOGO_URL', default='')
 YOUTUBE = config('YOUTUBE', default='https://youtube.com/')
 LINKEDIN = config('LINKEDIN', default='https://linkedin.com')
@@ -178,11 +179,6 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 
-SITE_URL =  "https://rwooga-project.vercel.app"   
-COMPANY_NAME = "Rwooga"                 
-SUPPORT_EMAIL = "support@rwooga.com"
-VERIFICATION_CODE_EXPIRY_MINUTES = 10 
-
 # Email Configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
@@ -192,7 +188,7 @@ EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
 # Site Configuration
-SITE_URL = config('SITE_URL', default='http://localhost:3000')
+
 COMPANY_NAME = config('COMPANY_NAME', default='Rwooga')
 SUPPORT_EMAIL = config('SUPPORT_EMAIL', default='support@rwooga.com')
 VERIFICATION_CODE_EXPIRY_MINUTES = config('VERIFICATION_CODE_EXPIRY_MINUTES', default=10, cast=int)
