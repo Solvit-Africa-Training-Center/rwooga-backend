@@ -1,4 +1,5 @@
 import logging
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -18,9 +19,8 @@ from accounts.serializers import (
     VerifyEmailSerializer,
 )
 from accounts.permissions import IsAdmin, IsOwnerOrAdmin
-from accounts.models import VerificationCode
 from utils.registration_verification import send_registration_verification
-from utils.send_password_reset_verification import send_password_reset_verification
+from utils.password_reset_verification import send_password_reset_verification
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -82,7 +82,7 @@ class AuthViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=["post"])
     def register(self, request):
-        """Register a new user and send verification email"""
+        """Register a new user and send verification code via email"""
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
@@ -96,6 +96,7 @@ class AuthViewSet(viewsets.GenericViewSet):
                     status=status.HTTP_201_CREATED,
                 )
             except Exception as e:
+                logger.error(f"Failed to send verification email: {str(e)}")
                 return Response(
                     {
                         "message": "Registration successful but failed to send verification email.",
@@ -108,19 +109,24 @@ class AuthViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=["post"])
     def verify_email(self, request):
-        """Verify user's email using UUID token"""
+        """
+        Verify user's email using 6-digit code
+        """
         serializer = VerifyEmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        user = serializer.validated_data["user"]
         verification = serializer.validated_data["verification"]
-        user = verification.user
 
+        # Activate user
         user.is_active = True
         user.save(update_fields=["is_active"])
+        
+        # Mark verification code as used
+        verification.is_verified = True
+        verification.save(update_fields=["is_verified"])
 
-        verification.is_used = True
-        verification.save(update_fields=["is_used"])
-
+        # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
         refresh["full_name"] = user.full_name
         refresh["phone_number"] = user.phone_number
@@ -142,7 +148,10 @@ class AuthViewSet(viewsets.GenericViewSet):
         """Resend verification code to user's email"""
         email = request.data.get("email")
         if not email:
-            return Response({"error": "Email address is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Email address is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
             user = User.objects.get(email=email)
@@ -151,8 +160,12 @@ class AuthViewSet(viewsets.GenericViewSet):
                     {"error": "This email address is already verified. You can log in now."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            
             send_registration_verification(user)
-            return Response({"message": "A new verification code has been sent to your email."}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "A new verification code has been sent to your email."}, 
+                status=status.HTTP_200_OK
+            )
         except User.DoesNotExist:
             return Response(
                 {"error": "No account found with this email address. Please register first."},
@@ -172,7 +185,10 @@ class AuthViewSet(viewsets.GenericViewSet):
     def logout(self, request):
         refresh_token = request.data.get("refresh")
         if not refresh_token:
-            return Response({"error": "Refresh token is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Refresh token is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         token = RefreshToken(refresh_token)
         token.blacklist()
@@ -184,13 +200,16 @@ class AuthViewSet(viewsets.GenericViewSet):
         try:
             refresh_token_str = request.data.get("refresh")
             if not refresh_token_str:
-                return Response({"error": "Refresh token is required"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": "Refresh token is required"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
             token = RefreshToken(refresh_token_str)
             new_access_token = str(token.access_token)
             response_data = {"access": new_access_token}
 
-            from django.conf import settings
+           
             simple_jwt_settings = getattr(settings, 'SIMPLE_JWT', {})
             if simple_jwt_settings.get('ROTATE_REFRESH_TOKENS', False):
                 try:
@@ -207,16 +226,22 @@ class AuthViewSet(viewsets.GenericViewSet):
 
         except TokenError as e:
             logger.error(f"Token refresh failed: {str(e)}")
-            return Response({"error": "Invalid or expired refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Invalid or expired refresh token"}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             logger.error(f"Token refresh error: {str(e)}")
-            return Response({"error": "Token refresh failed"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Token refresh failed"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=False, methods=["post"], permission_classes=[AllowAny])
     def password_reset_request(self, request):
-        """Send password reset token to user's email"""
+        """Send password reset code to user's email"""
         serializer = PasswordResetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -224,45 +249,47 @@ class AuthViewSet(viewsets.GenericViewSet):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            return Response({"error": "User with this email does not exist."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "User with this email does not exist."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
             send_password_reset_verification(user)
-            return Response({"message": "Password reset link sent to your email."}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Password reset code sent to your email."}, 
+                status=status.HTTP_200_OK
+            )
         except Exception as e:
             logger.error(f"Failed to send password reset email: {str(e)}")
-            return Response({"message": "Failed to send reset email.", "error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"message": "Failed to send reset email.", "error": str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @action(detail=False, methods=["post"])
     def password_reset_confirm(self, request):
-        """Confirm password reset using token and set new password"""
+        """
+        Confirm password reset using 6-digit code and set new password
+        """
         serializer = PasswordResetConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data["email"]
-        token = serializer.validated_data["token"]
-
-        try:
-            verification = VerificationCode.objects.get(
-                email=email,
-                token=token,
-                label=VerificationCode.RESET_PASSWORD,
-                is_used=False,
-            )
-        except VerificationCode.DoesNotExist:
-            return Response({"error": "Invalid or expired reset link."}, status=status.HTTP_400_BAD_REQUEST)
-
-        if verification.is_expired:
-            return Response({"error": "Reset link has expired."}, status=status.HTTP_400_BAD_REQUEST)
-
-        user = verification.user
+        user = serializer.validated_data["user"]
+        verification = serializer.validated_data["verification"]
+        
+        # Set new password
         user.set_password(serializer.validated_data["new_password"])
         user.save(update_fields=["password"])
+        
+        # Mark reset code as used
+        verification.is_verified = True
+        verification.save(update_fields=["is_verified"])
 
-        verification.is_used = True
-        verification.save(update_fields=["is_used"])
-
-        return Response({"message": "Password has been reset successfully."}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": "Password has been reset successfully."}, 
+            status=status.HTTP_200_OK
+        )
 
 
 class ProfileViewSet(viewsets.GenericViewSet):
@@ -285,9 +312,11 @@ class ProfileViewSet(viewsets.GenericViewSet):
     def change_password(self, request):
         serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-
         user = request.user
         user.set_password(serializer.validated_data["new_password"])
         user.save()
 
-        return Response({"message": "Password changed successfully"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": "Password changed successfully"}, 
+            status=status.HTTP_200_OK
+        )

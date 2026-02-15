@@ -1,12 +1,13 @@
 from django.utils import timezone
 from django.contrib.auth import get_user_model
-from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
-from accounts.models import User, VerificationCode
+from accounts.models import User
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 User = get_user_model()
+
+
 class UserSerializer(serializers.ModelSerializer):    
     class Meta:
         model = User
@@ -84,33 +85,53 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 
 class VerifyEmailSerializer(serializers.Serializer):
-
+    """
+    Serializer for verifying email using 6-digit code
+    Requires both email and code for verification
+    """
     email = serializers.EmailField(required=True)
-    token = serializers.UUIDField(required=True)
+    code = serializers.CharField(required=True, min_length=6, max_length=6)
+
+    def validate_code(self, value):
+        """Validate that code is 6 digits"""
+        if not value.isdigit():
+            raise serializers.ValidationError("Code must be 6 digits")
+        if len(value) != 6:
+            raise serializers.ValidationError("Code must be exactly 6 digits")
+        return value
 
     def validate(self, attrs):
+        """Verify the code and extract user"""
+        from accounts.models import VerificationCode  # Import here to avoid circular import
+        
         email = attrs['email']
-        token = attrs['token']
-
-        verification = VerificationCode.objects.filter(
-            email=email,
-            token=token,
-            label=VerificationCode.REGISTER,
-            is_used=False
-        ).first()
-
-        if not verification:
-            raise serializers.ValidationError(
-                "Invalid verification link."
+        code = attrs['code']
+        
+        # Find verification code
+        try:
+            verification = VerificationCode.objects.get(
+                email=email,
+                code=code,
+                label=VerificationCode.REGISTER,
+                is_verified=False
             )
-
+        except VerificationCode.DoesNotExist:
+            raise serializers.ValidationError("Invalid verification code or email")
+        
+        # Check if expired
         if verification.is_expired:
-            raise serializers.ValidationError(
-                "Verification link has expired."
-            )
-
-        # Attach for use in the view
+            raise serializers.ValidationError("Verification code has expired")
+        
+       # Get user
+        user = verification.user
+        
+        # Check if already verified
+        if user.is_active:
+            raise serializers.ValidationError("Email already verified")
+        
+        attrs['user'] = user
         attrs['verification'] = verification
+        
         return attrs
 
 
@@ -152,10 +173,13 @@ class PasswordResetRequestSerializer(serializers.Serializer):
         return value
 
 
-class PasswordResetConfirmSerializer(serializers.Serializer):  
-    
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """
+    Serializer for confirming password reset using 6-digit code
+    Requires email, code, and new password
+    """
     email = serializers.EmailField(required=True)
-    token = serializers.UUIDField(required=True) 
+    code = serializers.CharField(required=True, min_length=6, max_length=6)
     new_password = serializers.CharField(
         required=True,
         write_only=True,
@@ -163,20 +187,48 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     )
     new_password_confirm = serializers.CharField(required=True, write_only=True)
     
+    def validate_code(self, value):
+        """Validate that code is 6 digits"""
+        if not value.isdigit():
+            raise serializers.ValidationError("Code must be 6 digits")
+        if len(value) != 6:
+            raise serializers.ValidationError("Code must be exactly 6 digits")
+        return value
+    
     def validate(self, attrs):
+        """Verify passwords match and code is valid"""
+        from accounts.models import VerificationCode  # Import here to avoid circular import
+        
         if attrs['new_password'] != attrs['new_password_confirm']:
             raise serializers.ValidationError(
                 {"new_password": "Password fields didn't match."}
             )
+        
+        email = attrs['email']
+        code = attrs['code']
+        
+        # Find verification code
+        try:
+            verification = VerificationCode.objects.get(
+                email=email,
+                code=code,
+                label=VerificationCode.RESET_PASSWORD,
+                is_verified=False
+            )
+        except VerificationCode.DoesNotExist:
+            raise serializers.ValidationError("Invalid reset code or email")
+        
+        # Check if expired
+        if verification.is_expired:
+            raise serializers.ValidationError("Reset code has expired")
+        
+        # Get user
+        user = verification.user
+        
+        attrs['user'] = user
+        attrs['verification'] = verification
+        
         return attrs
-
-
-class VerificationCodeSerializer(serializers.ModelSerializer):   
-    
-    class Meta:
-        model = VerificationCode
-        fields = ['id', 'token', 'label', 'email', 'created_on', 'is_valid']
-        read_only_fields = ['id', 'token', 'created_on', 'is_valid']
 
 
 class UserProfileSerializer(serializers.ModelSerializer):  

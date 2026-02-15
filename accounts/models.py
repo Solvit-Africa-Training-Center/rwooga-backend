@@ -1,4 +1,5 @@
 import uuid
+import random
 from datetime import timedelta
 
 from django.db import models
@@ -57,7 +58,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         (CUSTOMER, 'Customer'),
     ]
     
-    # UUID Primary Key
+    
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -68,13 +69,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(
         _('email address'),
         unique=True,
+        null=False,
+        blank=False,
         error_messages={
             'unique': _("A user with that email already exists."),
         }
     )
     
     phone_number = models.CharField(
-        max_length=10,  
+        max_length=10,
         unique=True,
     )
     
@@ -86,11 +89,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         default=CUSTOMER 
     )    
     
-    is_active = models.BooleanField(_('active'), default=True)
+    is_active = models.BooleanField(_('active'), default=False)
     is_staff = models.BooleanField(_('staff status'), default=False)  
     
     date_joined = models.DateTimeField(_('date joined'), default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True)  
+    updated_at = models.DateTimeField(auto_now=True)
+    last_login = models.DateTimeField(_('last login'), blank=True, null=True)  
     
     objects = UserManager()    
     
@@ -145,14 +149,33 @@ class VerificationCode(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='verification_tokens'
+        related_name='verification_codes'
     )
 
-    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    
+    code = models.CharField(max_length=6, null=True, blank=True, db_index=True)  
     label = models.CharField(max_length=30, choices=LABEL_CHOICES)
     email = models.EmailField()
-    is_used = models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=False)
     created_on = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Verification Code'
+        verbose_name_plural = 'Verification Codes'
+        ordering = ['-created_on']
+        indexes = [
+            models.Index(fields=['code']),
+            models.Index(fields=['email', 'is_verified']),
+            models.Index(fields=['created_on']),
+        ]
+
+    def __str__(self):
+        return f"{self.email} - {self.label} - {'Used' if self.is_verified else 'Active'}"
+
+    @staticmethod
+    def generate_code():
+        """Generate a random 6-digit verification code"""
+        return ''.join([str(random.randint(0, 9)) for _ in range(6)])
 
     @property
     def is_expired(self):
@@ -161,4 +184,4 @@ class VerificationCode(models.Model):
 
     @property
     def is_valid(self):
-        return not self.is_used and not self.is_expired
+        return not self.is_verified and not self.is_expired
