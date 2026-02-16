@@ -96,6 +96,6 @@ temp/
 !**/migrations/__init__.py
 
 rwooga-project/
-orders/
-pricing/
-products/
+orders
+pricing
+products
