@@ -24,8 +24,6 @@ class Payment(models.Model):
     PROVIDER_CHOICES = (
         ('mtn_rwanda', 'MTN Rwanda Mobile Money'),
         ('airtel_rwanda', 'Airtel Money Rwanda'),
-        ('paypack', 'Paypack'),
-        ('flutterwave', 'Flutterwave'),
         ('irembpPay', 'Irembo Pay'),
         ('other', 'Other'),
     )
@@ -34,7 +32,7 @@ class Payment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     transaction_id = models.CharField(max_length=100, unique=True, db_index=True)
     
-    # CRITICAL: Link to Order and User
+    #Link to Order and User
     order = models.ForeignKey(
         'orders.Order',
         on_delete=models.CASCADE,

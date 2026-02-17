@@ -4,7 +4,6 @@ from .models import Payment
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    """Minimal admin interface for Payment model"""
     
     list_display = ['transaction_id', 'order', 'amount', 'status', 'created_at']
     list_filter = ['status', 'payment_method', 'created_at']
