@@ -138,10 +138,12 @@ class VerificationCode(models.Model):
 
     REGISTER = 'REGISTER'
     RESET_PASSWORD = 'RESET_PASSWORD'
+    EMAIL_CHANGE = 'EMAIL_CHANGE'
 
     LABEL_CHOICES = [
         (REGISTER, 'Register'),
         (RESET_PASSWORD, 'Reset Password'),
+        (EMAIL_CHANGE, 'Email Change'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

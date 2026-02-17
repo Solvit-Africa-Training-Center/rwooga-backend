@@ -345,15 +345,7 @@ class ProfileViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=["post"])
     def email_change_request(self, request):
-        """
-        Request email change - sends verification code to new email
-        
-        Required fields:
-        - new_email: The new email address
-        - password: Current password for security verification
-        
-        Response: Confirmation that code was sent to new email
-        """
+       
         serializer = EmailChangeRequestSerializer(
             data=request.data,
             context={"request": request}
@@ -386,15 +378,7 @@ class ProfileViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=["post"])
     def email_change_confirm(self, request):
-        """
-        Confirm email change using 6-digit code
-        
-        Required fields:
-        - new_email: The new email address (must match the one from request)
-        - code: 6-digit verification code sent to new email
-        
-        Response: New JWT tokens with updated email
-        """
+    
         serializer = EmailChangeConfirmSerializer(
             data=request.data,
             context={"request": request}
@@ -435,13 +419,7 @@ class ProfileViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=["post"])
     def resend_email_change_code(self, request):
-        """
-        Resend email change verification code
-        
-        Required fields:
-        - new_email: The new email address
-        - password: Current password for security verification
-        """
+      
         serializer = EmailChangeRequestSerializer(
             data=request.data,
             context={"request": request}
