@@ -2,11 +2,12 @@ from rest_framework import viewsets, permissions, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
 from django.db.models import Avg
 from .models import ServiceCategory, Product, ProductMedia, Feedback, CustomRequest, Wishlist, WishlistItem, Discount, ProductDiscount
-from .permissions import AnyoneCanCreateRequest, AnyoneCanCreateRequest, IsAdminOrStaffOrReadOnly, IsOwnerOnly, IsStaffOnly, CustomerCanCreateFeedback
+from .permissions import AnyoneCanCreateRequest, IsOwnerOnly, IsStaffOnly, CustomerCanCreateFeedback
 from .serializers import (
-    CustomRequestSerializer,
     CustomRequestSerializer,
     ServiceCategorySerializer,
     ProductSerializer,
@@ -239,3 +240,15 @@ class ProductDiscountViewSet(viewsets.ModelViewSet):
         if product_id:
             qs = qs.filter(product_id=product_id)
         return qs
+    
+
+class CategoryRequiredFieldsAPIView(APIView):
+    def get(self, request, pk):
+        try:
+            category = ServiceCategory.objects.get(id=pk)
+            return Response({
+                "category": category.name,
+                "required_fields": category.get_required_fields_preview()
+            })
+        except ServiceCategory.DoesNotExist:
+            return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)

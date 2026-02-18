@@ -12,9 +12,8 @@ class ServiceCategorySerializer(serializers.ModelSerializer):
             'id', 
             'name', 
             'slug', 
-            'description', 
             'requires_dimensions',
-            'requires_material',           
+            'requires_material',
             'is_active', 
             'created_at', 
             'updated_at', 
@@ -74,6 +73,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "final_price",
             "media",
             "average_rating",
+            "is_for_sale",
         ]
         read_only_fields = [
             "id",
@@ -85,27 +85,54 @@ class ProductSerializer(serializers.ModelSerializer):
             "average_rating",
         ]
 
-    def validate(self, data):
-        category = data.get('category') or (self.instance.category if self.instance else None)
-
-        if category:
-
-            # Only validate dimensions if category requires them
-            if category.requires_dimensions:
-                length = data.get("length")
-                width = data.get("width")
-                height = data.get("height")
-
-                if not all([length, width, height]):
-                    raise serializers.ValidationError(
-                        "Length, width, and height are required for this service category."
-                    )
-                if length <= 0 or width <= 0 or height <= 0:
-                    raise serializers.ValidationError(
+    def get_fields(self):
+        fields = super().get_fields()
+        request = self.context.get('request')
+        
+        if request and request.method in ['POST', 'PUT', 'PATCH']:
+            category_id = request.data.get('category')
+            if category_id:
+                try:
+                    category = ServiceCategory.objects.get(id=category_id)
+                    
+                    # Dynamically require dimensions
+                    if category.requires_dimensions:
+                        fields['length'].required = True
+                        fields['width'].required = True
+                        fields['height'].required = True
                         
-                "Product dimensions must be greater than zero."
-            
-                    )        
+                    # Optional: dynamically require material
+                    if getattr(category, 'requires_material', False):
+                        fields['material'].required = True
+                        
+                except ServiceCategory.DoesNotExist:
+                    pass
+
+                # Portfolio vs Sale Mode
+            is_for_sale = request.data.get('is_for_sale', False)
+            if is_for_sale:
+                fields['unit_price'].required = True
+        return fields
+
+    def validate(self, data):
+        category = data.get('category')
+        if category:
+        # Validate dimensions
+            if getattr(category, 'requires_dimensions', False):
+                for dim in ['length', 'width', 'height']:
+                    if data.get(dim) is None:
+                        raise serializers.ValidationError({dim: f"{dim} is required for this category."})
+
+        # Optional: validate material
+        if getattr(category, 'requires_material', False):
+            if not data.get('material'):
+                raise serializers.ValidationError({'material': "Material is required for this category."})
+
+    # Validate sale mode
+        if data.get('is_for_sale') and not data.get('unit_price'):
+            raise serializers.ValidationError({
+                'unit_price': 'Price is required when product is for sale.'})
+    
         return data
     
     def get_final_price(self, obj):
@@ -154,14 +181,15 @@ class ProductListSerializer(serializers.ModelSerializer):
         model = Product
         fields = ['id', 'name', 'short_description', 'unit_price',
                   'currency', 'published', 'category_name',
-                  'average_rating', 'thumbnail', 'final_price']
+                  'average_rating', 'thumbnail', 'final_price', 'is_for_sale']
  
     def get_thumbnail(self, obj) -> str:
         first_media = obj.media.first()
         if first_media and first_media.image:
             return first_media.image.url
         return None
-
+    def get_final_price(self, obj):
+        return obj.get_final_price()
 class CustomRequestSerializer(serializers.ModelSerializer):
     service_category = serializers.PrimaryKeyRelatedField(
         queryset=ServiceCategory.objects.all(),

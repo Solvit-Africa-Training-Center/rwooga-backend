@@ -13,8 +13,6 @@ class ServiceCategory(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=100, blank=True, null=True)
-    description = models.TextField()
-    
     requires_dimensions = models.BooleanField(
         default=False, 
         help_text="Does this service need length/width/height?"
@@ -33,6 +31,14 @@ class ServiceCategory(models.Model):
         verbose_name = "Service Category"
         verbose_name_plural = "Service Categories"
 
+    def get_required_fields_preview(self):
+        required = ['name', 'description', 'category']  # always required
+        if self.requires_dimensions:
+            required.extend(['length', 'width', 'height'])
+        if self.requires_material:
+            required.append('material')
+        return required
+    
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
@@ -64,15 +70,14 @@ class Product(models.Model):
 
     available_sizes = models.CharField(max_length=200, blank=True)
     available_colors = models.CharField(max_length=200, blank=True)
-    available_colors = models.CharField(max_length=200, blank=True)
     available_materials = models.CharField(max_length=200, blank=True)
-    
+    is_for_sale = models.BooleanField(default=False)  
+
     @property
     def product_volume(self):
         if self.length or self.width or self.height :
             return self.length * self.width * self.height
-        else :
-            return 0
+        return None
 
     def save(self, *args, **kwargs):
         # Auto-generate unique slug
@@ -85,14 +90,10 @@ class Product(models.Model):
                 counter += 1
             self.slug = slug
 
-        # Auto-calculate volume
-        if self.length and self.width and self.height:
-            self.product_volume = self.length * self.width * self.height
-
         super().save(*args, **kwargs)
 
     def get_final_price(self):
-        price = self.unit_price
+        price = self.unit_price or Decimal("0.00")  
 
         for pd in self.product_discounts.select_related("discount"):
             discount = pd.discount
@@ -319,3 +320,4 @@ class WishlistItem(models.Model):
 
     def __str__(self):
         return f"{self.wishlist.user.full_name} - {self.product.name}"
+    

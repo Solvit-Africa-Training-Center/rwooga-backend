@@ -9,7 +9,8 @@ from .views import (
     WishlistItemViewSet,
     WishlistViewSet,
     DiscountViewSet,
-    ProductDiscountViewSet
+    ProductDiscountViewSet,
+    CategoryRequiredFieldsAPIView
 )
 
 router = DefaultRouter()
@@ -25,4 +26,5 @@ router.register('product-discounts', ProductDiscountViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),  
+    path('categories/<int:pk>/required-fields/', CategoryRequiredFieldsAPIView.as_view(), name='category-required-fields'),
 ]

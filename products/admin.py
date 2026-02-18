@@ -1,5 +1,39 @@
 from django.contrib import admin
+from django import forms
+from django.core.exceptions import ValidationError
 from .models import ServiceCategory, Product, ProductMedia, Feedback, CustomRequest, Wishlist, WishlistItem, Discount, ProductDiscount
+
+class ProductAdminForm(forms.ModelForm):
+    class Meta:
+        model = Product
+        fields = [
+            "category",
+            "name",
+            "slug",
+            "short_description",
+            "detailed_description",
+            "is_for_sale",        
+            "unit_price",
+            "currency",
+            "length",
+            "width",
+            "height",
+            "measurement_unit",
+            "published",
+            "uploaded_by",
+            "available_sizes",
+            "available_colors",
+            "available_materials",
+        ]
+   
+    def clean(self):
+        cleaned_data = super().clean()
+        is_for_sale = cleaned_data.get("is_for_sale")
+        unit_price = cleaned_data.get("unit_price")
+
+        if is_for_sale and not unit_price:
+            raise ValidationError({"unit_price": "Unit price is required when product is for sale."})
+        return cleaned_data
 
 
 class ProductMediaInline(admin.TabularInline):
@@ -15,16 +49,18 @@ class FeedbackInline(admin.TabularInline):
 
 @admin.register(ServiceCategory)
 class ServiceCategoryAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'is_active', 'created_at'] 
+    list_display = ['id', 'name', 'is_active', 'created_at', 'required_fields_preview'] 
     list_filter = ['is_active']
     search_fields = ['name']
     prepopulated_fields = {'slug': ('name',)}
 
-
+    def required_fields_preview(self, obj):
+        return ", ".join(obj.get_required_fields_preview())
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'category', 'unit_price', 'published', 'created_at']
-    list_filter = ['published', 'category', 'created_at']
+    form = ProductAdminForm
+    list_display = ['id', 'name', 'category', 'unit_price', 'published', 'created_at', 'is_for_sale']
+    list_filter = ['published', 'category', 'created_at', 'is_for_sale']
     search_fields = ['name', 'short_description']
     readonly_fields = ['slug', 'created_at', 'updated_at']  
     inlines = [ProductMediaInline, FeedbackInline]
@@ -34,7 +70,7 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': ('name', 'category', 'short_description', 'detailed_description')
         }),
         ('Pricing', {
-            'fields': ('unit_price', 'currency')
+            'fields': ('is_for_sale', 'unit_price', 'currency')
         }),
         ('Dimensions', {
             'fields': ('length', 'width', 'height', 'measurement_unit') 
