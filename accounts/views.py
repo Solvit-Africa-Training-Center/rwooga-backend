@@ -6,7 +6,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
-
+from drf_spectacular.utils import extend_schema
 from accounts.serializers import (
     CustomTokenObtainPairSerializer,
     UserSerializer,
@@ -25,7 +25,7 @@ from utils.send_password_reset_verification import send_password_reset_verificat
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
-
+@extend_schema(tags=['Accounts'])
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer

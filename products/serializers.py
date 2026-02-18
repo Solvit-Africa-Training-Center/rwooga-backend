@@ -315,3 +315,8 @@ class ProductDiscountSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["id", "created_at","product_name", "discount_name"]
+        
+
+class CategoryRequiredFieldSerializer(serializers.Serializer):
+    category = serializers.CharField()
+    required_fields = serializers.ListField(child = serializers.CharField())

@@ -5,7 +5,7 @@ from django.contrib.auth.password_validation import validate_password
 from accounts.models import User, VerificationCode
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
+from drf_spectacular.utils import extend_schema_field
 User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):    
     class Meta:
@@ -17,6 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'date_joined', 'updated_at', 'is_staff', 'is_admin']
     
+    @extend_schema_field(serializers.CharField())
     def get_full_name(self, obj):
         return obj.get_full_name()
 
@@ -192,7 +193,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'id', 'email', 'date_joined', 'updated_at', 
             'is_staff', 'is_admin', 'user_type'
         ]
-
+    
+    @extend_schema_field(serializers.CharField())
     def get_full_name(self, obj):
         return obj.get_full_name()
 

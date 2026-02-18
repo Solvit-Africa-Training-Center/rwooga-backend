@@ -2,7 +2,7 @@ from rest_framework import viewsets, permissions, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-
+from drf_spectacular.utils import extend_schema
 from .models import Order, OrderItem, OrderDiscount, Return, Refund, Shipping
 from .serializers import (
     OrderSerializer,
@@ -27,7 +27,7 @@ class IsAdminOrStaff(permissions.BasePermission):
             request.user.is_staff or getattr(request.user, 'is_admin', False)
         )
 
-
+@extend_schema(tags=['Orders'])
 class ShippingViewSet(viewsets.ReadOnlyModelViewSet):
     
     serializer_class = ShippingSerializer
