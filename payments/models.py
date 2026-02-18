@@ -19,13 +19,17 @@ class Payment(models.Model):
     PAYMENT_METHOD_CHOICES = (
         ('momo', 'Mobile Money'),
         ('card', 'Credit/Debit Card'),
+       
     )
     
     PROVIDER_CHOICES = (
         ('mtn_rwanda', 'MTN Rwanda Mobile Money'),
         ('airtel_rwanda', 'Airtel Money Rwanda'),
-        ('irembpPay', 'Irembo Pay'),
+        ('iremboPay', 'Irembo Pay'),
+        ('k_pay', 'K-Pay'),
+        ('paypack', 'Paypack'),  
         ('other', 'Other'),
+        
     )
 
     # Primary identifiers

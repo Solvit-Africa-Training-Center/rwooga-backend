@@ -197,14 +197,16 @@ class CardPaymentSerializer(serializers.Serializer):
    
     payment_token = serializers.CharField(
         max_length=255,
-        help_text="Payment token from gateway (Flutterwave, Paystack, etc.)"
+        help_text="Payment token from gateway (IremoboPay, Paystack, etc.)"
     )
     provider = serializers.ChoiceField(
-        choices=[
-            ('flutterwave', 'Flutterwave'),
-            ('paypack', 'Paypack'),
-        ],
-        default='flutterwave'
+         choices=[
+        ('iremboPay', 'IremoboPay'),
+        ('k_pay', 'K-Pay'),
+        ('paypack', 'Paypack'),
+    ],
+    default='iremboPay'
+       
     )
     customer_email = serializers.EmailField(required=False)
     callback_url = serializers.URLField(required=False, allow_blank=True)
