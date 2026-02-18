@@ -28,7 +28,7 @@ class IsAdminOrStaff(permissions.BasePermission):
         )
 
 
-class ShippingViewSet(viewsets.ReadOnlyModelViewSet):
+class ShippingViewSet(viewsets.ModelViewSet):
     
     serializer_class = ShippingSerializer
     permission_classes = [permissions.IsAuthenticated]
