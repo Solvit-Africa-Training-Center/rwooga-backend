@@ -1,5 +1,39 @@
 from django.contrib import admin
-from .models import ServiceCategory, Product, ProductMedia, Feedback, Discount, ProductDiscount
+from django import forms
+from django.core.exceptions import ValidationError
+from .models import ServiceCategory, Product, ProductMedia, Feedback, CustomRequest, Wishlist, WishlistItem, Discount, ProductDiscount
+
+class ProductAdminForm(forms.ModelForm):
+    class Meta:
+        model = Product
+        fields = [
+            "category",
+            "name",
+            "slug",
+            "short_description",
+            "detailed_description",
+            "is_for_sale",        
+            "unit_price",
+            "currency",
+            "length",
+            "width",
+            "height",
+            "measurement_unit",
+            "published",
+            "uploaded_by",
+            "available_sizes",
+            "available_colors",
+            "available_materials",
+        ]
+   
+    def clean(self):
+        cleaned_data = super().clean()
+        is_for_sale = cleaned_data.get("is_for_sale")
+        unit_price = cleaned_data.get("unit_price")
+
+        if is_for_sale and not unit_price:
+            raise ValidationError({"unit_price": "Unit price is required when product is for sale."})
+        return cleaned_data
 
 
 class ProductMediaInline(admin.TabularInline):
@@ -15,17 +49,20 @@ class FeedbackInline(admin.TabularInline):
 
 @admin.register(ServiceCategory)
 class ServiceCategoryAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'is_active', 'display_order', 'created_at']
+    list_display = ['id', 'name', 'is_active', 'created_at', 'required_fields_preview'] 
     list_filter = ['is_active']
     search_fields = ['name']
-    ordering = ['display_order']
+    prepopulated_fields = {'slug': ('name',)}
 
+    def required_fields_preview(self, obj):
+        return ", ".join(obj.get_required_fields_preview())
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'category', 'unit_price', 'published', 'created_at']
-    list_filter = ['published', 'category', 'created_at']
+    form = ProductAdminForm
+    list_display = ['id', 'name', 'category', 'unit_price', 'published', 'created_at', 'is_for_sale']
+    list_filter = ['published', 'category', 'created_at', 'is_for_sale']
     search_fields = ['name', 'short_description']
-    readonly_fields = ['slug','product_volume', 'created_at', 'updated_at']
+    readonly_fields = ['slug', 'created_at', 'updated_at']  
     inlines = [ProductMediaInline, FeedbackInline]
     
     fieldsets = (
@@ -33,13 +70,13 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': ('name', 'category', 'short_description', 'detailed_description')
         }),
         ('Pricing', {
-            'fields': ('unit_price', 'currency')
+            'fields': ('is_for_sale', 'unit_price', 'currency')
         }),
         ('Dimensions', {
-            'fields': ('length', 'width', 'height', 'product_volume', 'measurement_unit', 'material')
+            'fields': ('length', 'width', 'height', 'measurement_unit') 
         }),
         ('Product Variations', {
-            'fields': ('available_sizes', 'available_colors', 'available_materials'),
+            'fields': ('available_sizes', 'available_colors', 'available_materials'),  
             'description': 'Enter comma-separated values (e.g., Small, Medium, Large)'
         }),
         ('Publishing', {
@@ -70,6 +107,69 @@ class FeedbackAdmin(admin.ModelAdmin):
     def make_unpublished(self, request, queryset):
         queryset.update(published=False)
     make_unpublished.short_description = "Unpublish selected feedback"
+
+
+@admin.register(CustomRequest)
+class CustomRequestAdmin(admin.ModelAdmin):
+    list_display = ['client_name', 'title', 'service_category', 'status', 'created_at']
+    list_filter = ['status', 'service_category', 'created_at']
+    search_fields = ['client_name', 'client_email', 'title', 'description']
+    readonly_fields = ['created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Customer Information', {
+            'fields': ('client_name', 'client_email', 'client_phone')
+        }),
+        ('Request Details', {
+            'fields': ('service_category', 'title', 'description', 'reference_file', 'budget')
+        }),
+        ('Status & Notes', {
+            'fields': ('status',),
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at')
+        }),
+    )
+    
+    actions = ['mark_in_progress', 'mark_completed', 'mark_cancelled']
+    
+    def mark_in_progress(self, request, queryset):
+        queryset.update(status='IN_PROGRESS')
+    mark_in_progress.short_description = "Mark as In Progress"
+    
+    def mark_completed(self, request, queryset):
+        queryset.update(status='COMPLETED')
+    mark_completed.short_description = "Mark as Completed"
+    
+    def mark_cancelled(self, request, queryset):
+        queryset.update(status='CANCELLED')
+    mark_cancelled.short_description = "Mark as Cancelled"
+
+
+class WishlistItemInline(admin.TabularInline):
+    model = WishlistItem
+    extra = 0
+    readonly_fields = ['product', 'created_at']
+
+
+@admin.register(Wishlist)
+class WishlistAdmin(admin.ModelAdmin):
+    list_display = ['user', 'get_item_count', 'created_at']
+    search_fields = ['user__full_name', 'user__email']
+    readonly_fields = ['created_at']
+    inlines = [WishlistItemInline]
+    
+    def get_item_count(self, obj):
+        return obj.item_count
+    get_item_count.short_description = 'Items'
+
+
+@admin.register(WishlistItem)
+class WishlistItemAdmin(admin.ModelAdmin):
+    list_display = ['wishlist', 'product', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['wishlist__user__full_name', 'product__name']
+    readonly_fields = ['created_at']
 
 
 @admin.register(Discount)

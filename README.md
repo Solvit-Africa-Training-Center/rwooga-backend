@@ -8,7 +8,6 @@ This is a Django-based web application designed to manage accounts, orders, pric
 ## Features
 - **Accounts**: Manage user authentication and profiles.
 - **Orders**: Handle order creation, updates, and tracking.
-- **Pricing**: Manage pricing models and calculations.
 - **Products**: Manage product catalog and inventory.
 - **Utilities**: Shared utilities and helper functions.
 
@@ -35,13 +34,7 @@ rwooga_backend/
 │   ├── serializers.py
 │   ├── views.py
 │
-├── pricing/              # Control Products discount 
-│   ├── models.py
-│   ├── serializers.py
-│   ├── views.py
-├── static/            # Data Files
-│
-├── rwooga/  # Project settings
+├── rwoogaBackend/  # Project settings
 │   ├── settings.py
 │   ├── urls.py               # URLs Routing
 ├── utils/             
