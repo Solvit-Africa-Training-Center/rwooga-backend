@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema
 
 from .models import Order, OrderItem, OrderDiscount, Return, Refund, Shipping
 from .serializers import (
@@ -19,7 +20,6 @@ from .serializers import (
     RefundCompleteSerializer,
 )
 
-
 class IsAdminOrStaff(permissions.BasePermission):
     """Allow access only to admin or staff users."""
     def has_permission(self, request, view):
@@ -27,7 +27,7 @@ class IsAdminOrStaff(permissions.BasePermission):
             request.user.is_staff or getattr(request.user, 'is_admin', False)
         )
 
-
+@extend_schema(tags=["Shipping"])
 class ShippingViewSet(viewsets.ModelViewSet):
     
     serializer_class = ShippingSerializer
@@ -52,7 +52,7 @@ class ShippingViewSet(viewsets.ModelViewSet):
         # Regular users see only shipping addresses from their own orders
         return Shipping.objects.filter(orders__user=user).distinct()
 
-
+@extend_schema(tags=["Placing Orders"])
 class OrderViewSet(viewsets.ModelViewSet):
  
     permission_classes = [permissions.IsAuthenticated]
@@ -120,7 +120,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         order.save()
         return Response(OrderSerializer(order, context={'request': request}).data)
 
-
+@extend_schema(tags=["Track Item in Orders Items"])
 class OrderItemViewSet(viewsets.ReadOnlyModelViewSet):
     
     serializer_class = OrderItemSerializer
@@ -144,7 +144,7 @@ class OrderItemViewSet(viewsets.ReadOnlyModelViewSet):
 
         return qs
 
-
+@extend_schema(tags=["Orders with discounts"])
 class OrderDiscountViewSet(viewsets.ReadOnlyModelViewSet):
     
     serializer_class = OrderDiscountSerializer
@@ -166,7 +166,7 @@ class OrderDiscountViewSet(viewsets.ReadOnlyModelViewSet):
 
         return qs
 
-
+@extend_schema(tags=["Returns"])
 class ReturnViewSet(viewsets.ModelViewSet):
  
     serializer_class = ReturnSerializer
@@ -272,7 +272,7 @@ class ReturnViewSet(viewsets.ModelViewSet):
 
         return Response(ReturnSerializer(return_obj, context={'request': request}).data)
 
-
+@extend_schema(tags=["Refund"])
 class RefundViewSet(viewsets.ModelViewSet):
    
     serializer_class = RefundSerializer

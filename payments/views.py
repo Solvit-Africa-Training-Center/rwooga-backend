@@ -4,13 +4,14 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from .models import Payment
+from drf_spectacular.utils import extend_schema
 from .serializers import (
     PaymentSerializer,
     MobileMoneyPaymentSerializer,
     CardPaymentSerializer,
     PaymentStatusUpdateSerializer,
 )
-from .paypack_utils import paypack_service  # Your existing Paypack integration
+from .paypack_utils import paypack_service  
 
 
 class IsAdminOrStaff(permissions.BasePermission):
@@ -20,14 +21,9 @@ class IsAdminOrStaff(permissions.BasePermission):
             request.user.is_staff or getattr(request.user, 'is_admin', False)
         )
 
-
+@extend_schema(tags=["Payments"])
 class PaymentViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for managing payments
-    
-    List/Retrieve: Users see their own payments, admins see all
-    Create: Use the custom actions (initiate_momo, initiate_card)
-    """
+  
     serializer_class = PaymentSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -69,18 +65,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['post'], url_path='initiate-momo')
     def initiate_momo(self, request):
-        """
-        Initiate Mobile Money payment
-        
-        POST /api/v1/payments/initiate-momo/
-        {
-            "order": "uuid-of-order",
-            "phone_number": "250788123456",
-            "provider": "paypack",
-            "customer_name": "John Doe",
-            "customer_email": "john@example.com"
-        }
-        """
+    
         serializer = MobileMoneyPaymentSerializer(
             data=request.data,
             context={'request': request}
@@ -137,21 +122,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['post'], url_path='initiate-card')
     def initiate_card(self, request):
-        """
-        Initiate Card payment
-        
-        POST /api/v1/payments/initiate-card/
-        {
-            "order": "uuid-of-order",
-            "payment_token": "token-from-flutterwave",
-            "provider": "flutterwave",
-            "customer_email": "john@example.com"
-        }
-        
-        NOTE: Card details should be collected on frontend using payment gateway's
-        secure form (Flutterwave Inline, Paystack Popup, etc.) and only the token
-        should be sent to backend.
-        """
+       
         serializer = CardPaymentSerializer(
             data=request.data,
             context={'request': request}
@@ -174,11 +145,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['get'], url_path='status')
     def check_status(self, request, pk=None):
-        """
-        Check payment status and update from provider if pending
-        
-        GET /api/v1/payments/{id}/status/
-        """
+       
         payment = self.get_object()
         
         # If payment is pending and has provider reference, check with Paypack
@@ -232,11 +199,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'], url_path='cancel')
     def cancel_payment(self, request, pk=None):
-        """
-        Cancel a pending payment
-        
-        POST /api/v1/payments/{id}/cancel/
-        """
+      
         payment = self.get_object()
         
         # Check user owns the payment
@@ -269,20 +232,11 @@ class PaymentViewSet(viewsets.ModelViewSet):
         permission_classes=[permissions.AllowAny],  # Webhooks come from payment provider
     )
     def webhook(self, request):
-        """
-        Webhook endpoint for payment provider callbacks
-        
-        POST /api/v1/payments/webhook/
-        
-        This should be secured with signature verification from your payment provider
-        """
-        # TODO: Verify webhook signature from Paypack/Flutterwave
-        # For Paypack, verify the signature using their documentation
-        
+    
         data = request.data
         
         # Get transaction reference from webhook data
-        # This depends on your payment provider's webhook format
+        # This depends on  payment provider's webhook format
         provider_reference = data.get('ref') or data.get('reference')
         
         if not provider_reference:

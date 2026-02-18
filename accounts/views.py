@@ -24,11 +24,12 @@ from accounts.permissions import IsAdmin, IsOwnerOrAdmin
 from utils.registration_verification import send_registration_verification
 from utils.password_reset_verification import send_password_reset_verification
 from utils.email_change_verification import send_email_change_verification
+from drf_spectacular.utils import extend_schema
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
-
+@extend_schema(tags=["CRUD Operations and  Permissions"])
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -65,7 +66,7 @@ class UserViewSet(viewsets.ModelViewSet):
         user.save()
         return Response({"status": "User deactivated"})
 
-
+@extend_schema(tags=[" User Authentication "])
 class AuthViewSet(viewsets.GenericViewSet):
     permission_classes = [AllowAny]
     serializer_class = CustomTokenObtainPairSerializer
@@ -294,7 +295,7 @@ class AuthViewSet(viewsets.GenericViewSet):
             status=status.HTTP_200_OK
         )
 
-
+@extend_schema(tags=["Update User Profile "])
 class ProfileViewSet(viewsets.GenericViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = UserProfileSerializer
