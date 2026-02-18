@@ -152,7 +152,11 @@ INSTAGRAM_ICON_URL = config('INSTAGRAM_ICON_URL', default='')
 TWITTER_ICON_URL = config('TWITTER_ICON_URL', default='')
 TIKTOK_ICON_URL = config('TIKTOK_ICON_URL', default='')
 
-STORAGES = {   
+STORAGES = {  
+    "default": {
+        # "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+        "BACKEND": "django.core.files.storage.FileSystemStorage"
+    },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
