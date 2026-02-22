@@ -93,8 +93,8 @@ class ProductSerializer(serializers.ModelSerializer):
             "final_price",
             "average_rating",
         ]
-    def get_media_details(self,obj):
-        return ProductMediaSerializer(obj.product_media.all(),many=True).data
+    def get_media_details(self, obj):
+        return ProductMediaSerializer(obj.media.all(), many=True).data
     
     def get_fields(self):
         fields = super().get_fields()
@@ -204,7 +204,7 @@ class ProductListSerializer(serializers.ModelSerializer):
                   'average_rating', 'thumbnail', 'final_price', 'is_for_sale']
  
     def get_thumbnail(self, obj) -> str:
-        first_media = obj.product_media.first()
+        first_media = obj.media.first()
         if first_media and first_media.image:
             request = self.context.get('request')
             url = first_media.image.url
@@ -277,9 +277,15 @@ class WishlistItemSerializer(serializers.ModelSerializer):
     
    
     def get_product_thumbnail(self, obj) -> str:
-        first_media = obj.product.product_media.first()
+        first_media = obj.product.media.first()
         if first_media and first_media.image:
-            return first_media.image.url
+            request = self.context.get('request')
+            url = first_media.image.url
+            if request:
+                return request.build_absolute_uri(url)
+            if url.startswith('/'):
+                return f"{BACKEND_URL}{url}"
+            return url
         return None
 
 
