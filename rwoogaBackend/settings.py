@@ -1,5 +1,5 @@
 import os
-from decouple import config
+from decouple import config, Csv
 from dotenv import load_dotenv
 from datetime import timedelta
 from pathlib import Path
@@ -13,10 +13,9 @@ load_dotenv()
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY')
 #DEBUG = config('DEBUG', default=False, cast=bool)
-DEBUG = True
-
 ALLOWED_HOSTS = ['*']
 
+DEBUG = config('DEBUG', default=False, cast=bool)
 # Application definition
 INSTALLED_APPS = [
     'admin_interface',
@@ -31,13 +30,16 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',  
     'corsheaders',
-    'django_extensions',
+    'django_extensions',   
     'django_filters',
     'drf_spectacular',   
     'accounts.apps.AccountsConfig',
     'orders',
+    'payments',
     'products',
     'utils',
+    'cloudinary',
+    'cloudinary_storage',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -52,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
 ]
  
 ROOT_URLCONF = 'rwoogaBackend.urls'
@@ -72,7 +75,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'rwoogaBackend.wsgi.application'
-
 # Database Configuration for production
 if config('DATABASE_URL', default=None):
     DATABASES = {
@@ -99,6 +101,8 @@ else:
             'CONN_MAX_AGE': 600,  
         }
     }
+
+ 
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -131,7 +135,6 @@ MEDIA_URL = '/media/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 
 # Email context variables
@@ -150,33 +153,36 @@ INSTAGRAM_ICON_URL = config('INSTAGRAM_ICON_URL', default='')
 TWITTER_ICON_URL = config('TWITTER_ICON_URL', default='')
 TIKTOK_ICON_URL = config('TIKTOK_ICON_URL', default='')
 
-STORAGES = {   
+
+
+ # settings.py
+ 
+
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage"
+        if not DEBUG else
+        "django.core.files.storage.FileSystemStorage",
+    },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
 
+# Cloudinary configuration
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default=''),
+    'API_KEY':    config('CLOUDINARY_API_KEY', default=''),
+    'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
+}
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS Configuration
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://rwooga-project.vercel.app",
-    "https://www.rwooga.com",
-    "https://modern-noemi-rwooga3dservices-e96463f8.koyeb.app",
-    
-]
-CORS_ALLOW_CREDENTIALS = True
-
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://rwooga-project.vercel.app",
-    "https://www.rwooga.com",
-    "https://modern-noemi-rwooga3dservices-e96463f8.koyeb.app",
-]
+# Using default empty string to allow builds without env vars
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='', cast=Csv())
+CORS_ALLOW_CREDENTIALS = config('CORS_ALLOW_CREDENTIALS', default=True, cast=bool)
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
 
 
 # Email Configuration
@@ -233,7 +239,7 @@ SIMPLE_JWT = {
 # API Documentation Configuration
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Rwooga Backend API',
-    'DESCRIPTION': 'API for user authentication and 3D services',
+    'DESCRIPTION': 'API for user authentication , payments, orders and listing products',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
 }
@@ -268,6 +274,3 @@ LOGGING = {
         },
     },
 }
-
-
-

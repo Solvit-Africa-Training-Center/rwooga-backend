@@ -2,11 +2,13 @@ from rest_framework import viewsets, permissions, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
 from django.db.models import Avg
 from .models import ServiceCategory, Product, ProductMedia, Feedback, CustomRequest, Wishlist, WishlistItem, Discount, ProductDiscount
-from .permissions import AnyoneCanCreateRequest, AnyoneCanCreateRequest, IsAdminOrStaffOrReadOnly, IsOwnerOnly, IsStaffOnly, CustomerCanCreateFeedback
+from .permissions import AnyoneCanCreateRequest, IsOwnerOnly, IsStaffOnly, CustomerCanCreateFeedback
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from .serializers import (
-    CustomRequestSerializer,
     CustomRequestSerializer,
     ServiceCategorySerializer,
     ProductSerializer,
@@ -16,16 +18,29 @@ from .serializers import (
     WishlistSerializer,
     WishlistItemSerializer,
     DiscountSerializer,
-    ProductDiscountSerializer
+    ProductDiscountSerializer,
+    CategoryRequiredFieldSerializer,
 )
 
-
+@extend_schema(tags=["Service Category"])
 class ServiceCategoryViewSet(viewsets.ModelViewSet):
     queryset = ServiceCategory.objects.all()
     serializer_class = ServiceCategorySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    
+    @extend_schema(
+        responses = CategoryRequiredFieldSerializer,
+        description="Get required fields for a specific service category"
+    )
+    @action(detail=True, methods=["get"])
+    def required_fields(self, request, pk=None):
+        category = self.get_object()
+        return Response({
+            "category": category.name,
+            "required_fields": category.get_required_fields_preview()
+        })
 
-
+@extend_schema(tags=["Listing Product"])
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all().annotate(
         average_rating=Avg("feedbacks__rating")
@@ -59,6 +74,14 @@ class ProductViewSet(viewsets.ModelViewSet):
             qs = qs.filter(unit_price__lte=max_price)
 
         return qs
+    
+    def create(self, request):
+        print(request.FILES)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
 
     @action(detail=True, methods=["post"])
     def publish(self, request, pk=None):
@@ -74,7 +97,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         product.save()
         return Response({"status": "Product unpublished"})
     
-  
+@extend_schema(tags=["Product Images"])
 class ProductMediaViewSet(viewsets.ModelViewSet):
     queryset = ProductMedia.objects.all()
     serializer_class = ProductMediaSerializer
@@ -86,8 +109,10 @@ class ProductMediaViewSet(viewsets.ModelViewSet):
         if product_id:
             qs = qs.filter(product_id=product_id)
         return qs
+    
 
 
+@extend_schema(tags=["Feedback on Product"])
 class FeedbackViewSet(viewsets.ModelViewSet):
     queryset = Feedback.objects.all()
     serializer_class = FeedbackSerializer
@@ -120,14 +145,14 @@ class FeedbackViewSet(viewsets.ModelViewSet):
             "published": feedback.published,
             "message": f"Feedback {'published' if feedback.published else 'unpublished'}"
         })
-
+@extend_schema(tags=["Booking or Custom Request"])
 class CustomRequestViewSet(viewsets.ModelViewSet):
     queryset = CustomRequest.objects.all()
     serializer_class = CustomRequestSerializer
     permission_classes = [AnyoneCanCreateRequest]
     
     
- 
+@extend_schema(tags=["View Wishlist"])
 class WishlistViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Retrieve user's wishlist
@@ -146,7 +171,7 @@ class WishlistViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(wishlist)
         return Response(serializer.data)
 
-
+@extend_schema(tags=["Track Item in Wishlist Items"])
 class WishlistItemViewSet(viewsets.ModelViewSet):
     """
     Manage wishlist items (add/remove products)
@@ -221,13 +246,13 @@ class WishlistItemViewSet(viewsets.ModelViewSet):
             })
         return Response({"message": "Wishlist is already empty"})
 
-
+@extend_schema(tags=["Discount "])
 class DiscountViewSet(viewsets.ModelViewSet):
     queryset = Discount.objects.all()
     serializer_class = DiscountSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-
+@extend_schema(tags=["Add Discount To Product"])
 class ProductDiscountViewSet(viewsets.ModelViewSet):
     queryset = ProductDiscount.objects.all()
     serializer_class = ProductDiscountSerializer
@@ -239,3 +264,4 @@ class ProductDiscountViewSet(viewsets.ModelViewSet):
         if product_id:
             qs = qs.filter(product_id=product_id)
         return qs
+    

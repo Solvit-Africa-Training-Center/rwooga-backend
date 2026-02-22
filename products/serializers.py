@@ -1,6 +1,10 @@
 from rest_framework import serializers
 from .models import CustomRequest, ServiceCategory, Product, ProductMedia, Feedback, Wishlist, WishlistItem, Discount, ProductDiscount
 
+# Absolute base URL of the deployed backend — used as fallback when request
+# context is not available in the serializer (e.g. background tasks, seeds).
+BACKEND_URL = "https://modern-noemi-rwooga3dservices-e96463f8.koyeb.app"
+
 
 
 class ServiceCategorySerializer(serializers.ModelSerializer):
@@ -12,10 +16,8 @@ class ServiceCategorySerializer(serializers.ModelSerializer):
             'id', 
             'name', 
             'slug', 
-            'description', 
             'requires_dimensions',
             'requires_material',
-            'pricing_type',
             'is_active', 
             'created_at', 
             'updated_at', 
@@ -41,19 +43,23 @@ class ProductMediaSerializer(serializers.ModelSerializer):
             "display_order",
             "uploaded_at",
         ]
-        read_only_fields = ["id", "uploaded_at"]
+       
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    media = ProductMediaSerializer(many=True, read_only=True)
+    media_details = serializers.SerializerMethodField()
+    category_name = serializers.CharField(source='category.name', read_only=True)
     average_rating = serializers.FloatField(read_only=True)
     final_price = serializers.SerializerMethodField()
+    images = serializers.ListField(child = serializers.ImageField(),write_only=True,
+                                   required=False)
     
     class Meta:
         model = Product
         fields = [
             "id",
             "category",
+            "category_name",
             "name",
             "slug",
             "short_description",
@@ -73,8 +79,10 @@ class ProductSerializer(serializers.ModelSerializer):
             "available_colors",
             "available_materials",
             "final_price",
-            "media",
+            "media_details",
             "average_rating",
+            "is_for_sale",
+            "images",
         ]
         read_only_fields = [
             "id",
@@ -85,28 +93,59 @@ class ProductSerializer(serializers.ModelSerializer):
             "final_price",
             "average_rating",
         ]
+    def get_media_details(self,obj):
+        return ProductMediaSerializer(obj.product_media.all(),many=True).data
+    
+    def get_fields(self):
+        fields = super().get_fields()
+        request = self.context.get('request')
+        
+        if request and request.method in ['POST', 'PUT', 'PATCH']:
+            category_id = request.data.get('category')
+            if category_id:
+                try:
+                    category = ServiceCategory.objects.get(id=category_id)
+                    
+                    # Dynamically require dimensions
+                    if category.requires_dimensions:
+                        fields['length'].required = True
+                        fields['width'].required = True
+                        fields['height'].required = True
+                        
+                    # Optional: dynamically require material
+                    if getattr(category, 'requires_material', False):
+                        fields['available_materials'].required = True
+                        
+                except ServiceCategory.DoesNotExist:
+                    pass
+
+                # Portfolio vs Sale Mode
+            is_for_sale = request.data.get('is_for_sale', False)
+            if is_for_sale:
+                fields['unit_price'].required = True
+        return fields
 
     def validate(self, data):
-        category = data.get('category') or (self.instance.category if self.instance else None)
-
+        print("bbybu9u9uho")
+        print(self.initial_data)
+        category = data.get('category')
         if category:
+        # Validate dimensions
+            if getattr(category, 'requires_dimensions', False):
+                for dim in ['length', 'width', 'height']:
+                    if data.get(dim) is None:
+                        raise serializers.ValidationError({dim: f"{dim} is required for this category."})
 
-            # Only validate dimensions if category requires them
-            if category.requires_dimensions:
-                length = data.get("length")
-                width = data.get("width")
-                height = data.get("height")
+        # Optional: validate material
+        if getattr(category, 'requires_material', False):
+            if not data.get('available_materials'):
+                raise serializers.ValidationError({'material': "Material is required for this category."})
 
-                if not all([length, width, height]):
-                    raise serializers.ValidationError(
-                        "Length, width, and height are required for this service category."
-                    )
-                if length <= 0 or width <= 0 or height <= 0:
-                    raise serializers.ValidationError(
-                        
-                "Product dimensions must be greater than zero."
-            
-                    )        
+    # Validate sale mode
+        if data.get('is_for_sale') and not data.get('unit_price'):
+            raise serializers.ValidationError({
+                'unit_price': 'Price is required when product is for sale.'})
+    
         return data
     
     def get_final_price(self, obj):
@@ -123,6 +162,13 @@ class ProductSerializer(serializers.ModelSerializer):
                 return max(obj.unit_price - discount.discount_value, 0)
         # No discount
         return obj.unit_price
+    
+    def create(self,validated_data):
+        images=self.initial_data.pop("images", [])
+        product_saved=Product.objects.create(**validated_data)
+        for image in images:
+            mn=ProductMedia.objects.create(product=product_saved,image=image)
+        return product_saved
 
 
 class FeedbackSerializer(serializers.ModelSerializer):
@@ -155,14 +201,23 @@ class ProductListSerializer(serializers.ModelSerializer):
         model = Product
         fields = ['id', 'name', 'short_description', 'unit_price',
                   'currency', 'published', 'category_name',
-                  'average_rating', 'thumbnail', 'final_price']
+                  'average_rating', 'thumbnail', 'final_price', 'is_for_sale']
  
     def get_thumbnail(self, obj) -> str:
-        first_media = obj.media.first()
+        first_media = obj.product_media.first()
         if first_media and first_media.image:
-            return first_media.image.url
+            request = self.context.get('request')
+            url = first_media.image.url
+            if request:
+                return request.build_absolute_uri(url)
+            # Fallback: manually prepend the backend host for relative /media/... paths
+            if url.startswith('/'):
+                return f"{BACKEND_URL}{url}"
+            return url
         return None
-
+    def get_final_price(self, obj):
+        return obj.get_final_price()
+    
 class CustomRequestSerializer(serializers.ModelSerializer):
     service_category = serializers.PrimaryKeyRelatedField(
         queryset=ServiceCategory.objects.all(),
@@ -222,7 +277,7 @@ class WishlistItemSerializer(serializers.ModelSerializer):
     
    
     def get_product_thumbnail(self, obj) -> str:
-        first_media = obj.product.media.first()
+        first_media = obj.product.product_media.first()
         if first_media and first_media.image:
             return first_media.image.url
         return None
@@ -288,3 +343,8 @@ class ProductDiscountSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["id", "created_at","product_name", "discount_name"]
+        
+
+class CategoryRequiredFieldSerializer(serializers.Serializer):
+    category = serializers.CharField()
+    required_fields = serializers.ListField(child = serializers.CharField())
