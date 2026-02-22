@@ -201,7 +201,7 @@ class ProductListSerializer(serializers.ModelSerializer):
         model = Product
         fields = ['id', 'name', 'short_description', 'unit_price',
                   'currency', 'published', 'category_name',
-                  'average_rating', 'thumbnail', 'final_price', 'is_for_sale']
+                  'average_rating', 'thumbnail', 'final_price']
  
     def get_thumbnail(self, obj) -> str:
         first_media = obj.media.first()
@@ -216,7 +216,10 @@ class ProductListSerializer(serializers.ModelSerializer):
             return url
         return None
     def get_final_price(self, obj):
-        return obj.get_final_price()
+        try:
+            return obj.get_final_price()
+        except Exception:
+            return obj.unit_price
     
 class CustomRequestSerializer(serializers.ModelSerializer):
     service_category = serializers.PrimaryKeyRelatedField(
