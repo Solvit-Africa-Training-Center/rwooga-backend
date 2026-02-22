@@ -94,7 +94,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "average_rating",
         ]
     def get_media_details(self, obj):
-        return ProductMediaSerializer(obj.media.all(), many=True).data
+        return ProductMediaSerializer(obj.product_media.all(), many=True).data
     
     def get_fields(self):
         fields = super().get_fields()
@@ -200,11 +200,11 @@ class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['id', 'name', 'short_description', 'unit_price',
-                  'currency', 'published', 'category_name',
+                  'currency', 'published', 'category_name', 'is_for_sale',
                   'average_rating', 'thumbnail', 'final_price']
  
     def get_thumbnail(self, obj) -> str:
-        first_media = obj.media.first()
+        first_media = obj.product_media.first()
         if first_media and first_media.image:
             request = self.context.get('request')
             url = first_media.image.url
@@ -280,7 +280,7 @@ class WishlistItemSerializer(serializers.ModelSerializer):
     
    
     def get_product_thumbnail(self, obj) -> str:
-        first_media = obj.product.media.first()
+        first_media = obj.product.product_media.first()
         if first_media and first_media.image:
             request = self.context.get('request')
             url = first_media.image.url

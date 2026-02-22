@@ -427,7 +427,7 @@ class Command(BaseCommand):
                 continue
 
             # Only add images if none exist for this product yet
-            if product.media.exists():
+            if product.product_media.exists():
                 self.stdout.write(f"    🖼  Images already exist — skipping upload")
                 continue
 

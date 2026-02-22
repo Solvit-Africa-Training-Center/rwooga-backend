@@ -13,7 +13,7 @@ class ServiceCategory(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=100, blank=True, null=True)
-    description = models.TextField()
+    description = models.TextField(blank=True, null=True)
     
     requires_dimensions = models.BooleanField(
         default=False, 
@@ -67,6 +67,7 @@ class Product(models.Model):
     measurement_unit = models.CharField(max_length=10, default="cm^3", blank=True, null=True)
  
     published = models.BooleanField(default=False)
+    is_for_sale = models.BooleanField(default=False)
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -133,7 +134,7 @@ class ProductMedia(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product = models.ForeignKey(
         Product,
-        related_name="media",
+        related_name="product_media",
         on_delete=models.CASCADE
     )
 
