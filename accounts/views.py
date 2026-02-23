@@ -7,6 +7,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+from drf_spectacular.utils import extend_schema
 
 from accounts.serializers import (
     CustomTokenObtainPairSerializer,
@@ -25,7 +26,7 @@ from utils.password_reset_verification import send_password_reset_verification
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
-
+@extend_schema(tags=["User Permissions"])
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -62,7 +63,7 @@ class UserViewSet(viewsets.ModelViewSet):
         user.save()
         return Response({"status": "User deactivated"})
 
-
+@extend_schema(tags=["User Authentication"])
 class AuthViewSet(viewsets.GenericViewSet):
     permission_classes = [AllowAny]
     serializer_class = CustomTokenObtainPairSerializer
@@ -193,7 +194,7 @@ class AuthViewSet(viewsets.GenericViewSet):
         token = RefreshToken(refresh_token)
         token.blacklist()
         return Response({"message": "Successfully logged out"})
-
+    @extend_schema(exclude=True)
     @action(detail=False, methods=["post"], permission_classes=[AllowAny])
     def refresh_token(self, request):
         """Refresh access token using refresh token"""
@@ -291,7 +292,7 @@ class AuthViewSet(viewsets.GenericViewSet):
             status=status.HTTP_200_OK
         )
 
-
+@extend_schema(tags=["Update User Information"])
 class ProfileViewSet(viewsets.GenericViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = UserProfileSerializer
