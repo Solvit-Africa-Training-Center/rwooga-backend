@@ -238,15 +238,17 @@ class PaymentViewSet(viewsets.ModelViewSet):
     @extend_schema(exclude=True)
     @action(
         detail=False,
-        methods=['post'],
+        methods=['post', 'head'],
         url_path='webhook',
         permission_classes=[permissions.AllowAny],
     )
     def webhook(self, request):
-        data = request.data
+        # Paypack sends HEAD requests as health checks before sending events
+        if request.method == 'HEAD':
+            return Response(status=status.HTTP_200_OK)
+
+        data = request.data        
         
-        # Get transaction reference from webhook data
-        # This depends on  payment provider's webhook format
         provider_reference = data.get('ref') or data.get('reference')
         
         if not provider_reference:
@@ -258,7 +260,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
         try:
             payment = Payment.objects.get(provider_reference=provider_reference)
             
-            # Update payment based on webhook data
+           
             webhook_status = data.get('status')
             
             if webhook_status == 'successful' or webhook_status == 'completed':

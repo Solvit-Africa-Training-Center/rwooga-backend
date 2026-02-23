@@ -51,8 +51,10 @@ class PaypackService:
             if response.status_code == 200:
                 data = response.json()
                 self.token = data.get('access')
-                # Subtract 60s buffer from expiry to refresh early
-                self.token_expiry = time.time() + data.get('expires_in', 3600) - 60
+                # Paypack tokens expire in ~40 minutes. Use 35 minutes (2100s) as a safe
+                # default regardless of what expires_in says, to avoid reusing expired tokens.
+                expires_in = data.get('expires_in', 2100)
+                self.token_expiry = time.time() + min(expires_in, 2100) - 60
                 print("Paypack authentication successful")
                 return self.token
             else:
@@ -65,6 +67,12 @@ class PaypackService:
         except Exception as e:
             print(f"Paypack Auth Error: {str(e)}")
             return None
+
+    def _force_refresh(self):
+        """Clear cached token and force a fresh authentication."""
+        self.token = None
+        self.token_expiry = 0
+        return self.authenticate()
 
     def cashin(self, amount, phone_number, attempt_reference=None):
         
@@ -92,6 +100,17 @@ class PaypackService:
             response = requests.post(url, json=payload, headers=headers, timeout=30)
             print(f"DEBUG: Paypack Response Status: {response.status_code}")
             print(f"DEBUG: Paypack Response Body: {response.text}")
+
+            # If token expired mid-session, force refresh and retry once
+            if response.status_code == 401:
+                print("Paypack Cashin: Token expired, refreshing and retrying...")
+                token = self._force_refresh()
+                if not token:
+                    return {"ok": False, "error": "Re-authentication failed"}
+                headers["Authorization"] = f"Bearer {token}"
+                response = requests.post(url, json=payload, headers=headers, timeout=30)
+                print(f"DEBUG: Paypack Retry Response Status: {response.status_code}")
+                print(f"DEBUG: Paypack Retry Response Body: {response.text}")
 
             data = response.json()
 
@@ -143,6 +162,17 @@ class PaypackService:
             print(f"DEBUG: Paypack Cashout Response Status: {response.status_code}")
             print(f"DEBUG: Paypack Cashout Response Body: {response.text}")
 
+            # If token expired mid-session, force refresh and retry once
+            if response.status_code == 401:
+                print("Paypack Cashout: Token expired, refreshing and retrying...")
+                token = self._force_refresh()
+                if not token:
+                    return {"ok": False, "error": "Re-authentication failed"}
+                headers["Authorization"] = f"Bearer {token}"
+                response = requests.post(url, json=payload, headers=headers, timeout=30)
+                print(f"DEBUG: Paypack Cashout Retry Response Status: {response.status_code}")
+                print(f"DEBUG: Paypack Cashout Retry Response Body: {response.text}")
+
             data = response.json()
 
             if response.status_code == 200:
@@ -182,6 +212,15 @@ class PaypackService:
 
         try:
             response = requests.get(url, headers=headers, timeout=30)
+
+            # If token expired mid-session, force refresh and retry once
+            if response.status_code == 401:
+                print("Paypack Status Check: Token expired, refreshing and retrying...")
+                token = self._force_refresh()
+                if not token:
+                    return None
+                headers["Authorization"] = f"Bearer {token}"
+                response = requests.get(url, headers=headers, timeout=30)
 
             if response.status_code == 200:
                 data = response.json()
