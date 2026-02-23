@@ -156,65 +156,58 @@ class CustomRequestViewSet(viewsets.ModelViewSet):
     
 @extend_schema(tags=["ControlRequest"])
 class ControlRequestViewSet(viewsets.GenericViewSet):
-    
+
     serializer_class = ControlRequestSerializer
-@action(detail=False, methods=['post'])
-def enable(self, request):
-    if not (request.user.is_staff or request.user.is_superuser):
-        return Response({"error": "Not allowed."}, status=status.HTTP_403_FORBIDDEN)
-    ControlRequest.objects.filter(pk=1).update(allow_custom_requests=True)
-    return Response({"message": "Custom requests ENABLED."})
+    permission_classes = [permissions.IsAdminUser]
 
-@action(detail=False, methods=['post'])
-def disable(self, request):
-    if not (request.user.is_staff or request.user.is_superuser):
-        return Response({"error": "Not allowed."}, status=status.HTTP_403_FORBIDDEN)
-    ControlRequest.objects.filter(pk=1).update(allow_custom_requests=False)
-    return Response({"message": "Custom requests DISABLED."})
+    def get_permissions(self):
+        if self.action == 'status':
+            return []
+        return super().get_permissions()
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], permission_classes=[])
     def status(self, request):
         """Public endpoint — returns whether requests are currently open."""
         is_open, reason = ControlRequest.requests_are_open()
-        settings = ControlRequest.get()
+        ctrl = ControlRequest.get()
         return Response({
             "is_open": is_open,
             "reason": reason,
             "pending_count": CustomRequest.objects.filter(status='PENDING').count(),
-            "max_pending_requests": settings.max_pending_requests,
+            "max_pending_requests": ctrl.max_pending_requests,
         })
 
     @action(detail=False, methods=['post'], permission_classes=[permissions.IsAdminUser])
     def enable(self, request):
         """Admin: Open custom request submissions."""
-        settings = ControlRequest.get()
-        settings.allow_custom_requests = True
-        settings.save()
+        ctrl = ControlRequest.get()
+        ctrl.allow_custom_requests = True
+        ctrl.save()
         return Response({
-            "message": " Custom requests are now ENABLED.",
+            "message": "Custom requests are now ENABLED.",
             "allow_custom_requests": True,
         })
 
     @action(detail=False, methods=['post'], permission_classes=[permissions.IsAdminUser])
     def disable(self, request):
         """Admin: Close custom request submissions."""
-        settings = ControlRequest.get()
-        settings.allow_custom_requests = False
+        ctrl = ControlRequest.get()
+        ctrl.allow_custom_requests = False
         reason = request.data.get('reason', '')
         if reason:
-            settings.disable_reason = reason
-        settings.save()
+            ctrl.disable_reason = reason
+        ctrl.save()
         return Response({
-            "message": " Custom requests are now DISABLED.",
+            "message": "Custom requests are now DISABLED.",
             "allow_custom_requests": False,
-            "disable_reason": settings.disable_reason,
+            "disable_reason": ctrl.disable_reason,
         })
 
     @action(detail=False, methods=['patch'], permission_classes=[permissions.IsAdminUser])
     def update_settings(self, request):
         """Admin: Update threshold, toggle, and message in one call."""
-        settings = ControlRequest.get()
-        serializer = ControlRequestSerializer(settings, data=request.data, partial=True)
+        ctrl = ControlRequest.get()
+        serializer = ControlRequestSerializer(ctrl, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)

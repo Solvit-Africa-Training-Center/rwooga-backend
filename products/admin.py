@@ -115,17 +115,125 @@ class CustomRequestAdmin(admin.ModelAdmin):
 
 @admin.register(ControlRequest)
 class ControlRequestAdmin(admin.ModelAdmin):
-    list_display = ['allow_custom_requests', 'max_pending_requests', 'pending_count']
-    fields = ['allow_custom_requests', 'max_pending_requests', 'disable_reason']
+    # ── Columns shown in the changelist ──────────────────────────────────────
+    list_display = [
+        'status_badge',
+        'allow_custom_requests',
+        'max_pending_requests',
+        'pending_count',
+        'disable_reason',
+    ]
 
+    # ── Fields shown in the change-form ──────────────────────────────────────
+    fieldsets = (
+        ('Toggle', {
+            'fields': ('allow_custom_requests',),
+            'description': (
+                'Turn custom-request submissions ON or OFF globally. '
+                'Use the <b>Enable / Disable</b> actions below for quick one-click control.'
+            ),
+        }),
+        ('Capacity Settings', {
+            'fields': ('max_pending_requests',),
+            'description': (
+                'Set to 0 to remove the cap. '
+                'When the number of PENDING requests equals this value, new submissions are blocked automatically.'
+            ),
+        }),
+        ('Disable Message', {
+            'fields': ('disable_reason',),
+            'description': 'Optional message shown to customers when submissions are closed.',
+        }),
+    )
+
+    # ── Bulk actions (work from the changelist checkboxes) ────────────────────
+    actions = ['action_enable_requests', 'action_disable_requests']
+
+    # ── Singleton guard ───────────────────────────────────────────────────────
     def has_add_permission(self, request):
+        """Only allow adding when no record exists yet (singleton pattern)."""
         return not ControlRequest.objects.exists()
 
     def has_delete_permission(self, request, obj=None):
+        """Prevent accidental deletion of the singleton record."""
         return False
 
+    # ── Custom display methods ────────────────────────────────────────────────
+    @admin.display(description='Status')
+    def status_badge(self, obj):
+        from django.utils.html import format_html
+        if obj.allow_custom_requests:
+            colour, label = '#28a745', ' OPEN'
+        else:
+            colour, label = '#dc3545', ' CLOSED'
+        return format_html(
+            '<span style="color:{};font-weight:bold;">{}</span>',
+            colour, label,
+        )
+
+    @admin.display(description='Pending Requests')
     def pending_count(self, obj):
-        return CustomRequest.objects.filter(status='PENDING').count()
+        from django.utils.html import format_html
+        count = CustomRequest.objects.filter(status='PENDING').count()
+        cap = obj.max_pending_requests
+        colour = '#dc3545' if (cap and count >= cap) else '#495057'
+        return format_html(
+            '<span style="color:{};font-weight:bold;">{} / {}</span>',
+            colour, count, cap if cap else '∞',
+        )
+
+    # ── Quick-action helpers ──────────────────────────────────────────────────
+    @admin.action(description=' Enable custom-request submissions')
+    def action_enable_requests(self, request, queryset):
+        ctrl = ControlRequest.get()
+        ctrl.allow_custom_requests = True
+        ctrl.save()
+        self.message_user(
+            request,
+            'Custom requests are now ENABLED.',
+            messages.SUCCESS,
+        )
+
+    @admin.action(description=' Disable custom-request submissions')
+    def action_disable_requests(self, request, queryset):
+        ctrl = ControlRequest.get()
+        ctrl.allow_custom_requests = False
+        ctrl.save()
+        self.message_user(
+            request,
+            'Custom requests are now DISABLED.',
+            messages.WARNING,
+        )
+
+    # ── Override change_view to always redirect to the singleton record ───────
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        ctrl = ControlRequest.get()
+        is_open, reason = ControlRequest.requests_are_open()
+        pending = CustomRequest.objects.filter(status='PENDING').count()
+        extra_context['control_stats'] = {
+            'is_open': is_open,
+            'reason': reason,
+            'pending': pending,
+            'max': ctrl.max_pending_requests,
+        }
+        return super().change_view(request, object_id, form_url, extra_context)
+
+    def changelist_view(self, request, extra_context=None):
+        """Auto-redirect to the singleton edit page when there is exactly one record."""
+        ctrl = ControlRequest.get()          # ensure the record exists
+        extra_context = extra_context or {}
+
+        # Inject a live summary banner into the changelist
+        is_open, reason = ControlRequest.requests_are_open()
+        pending = CustomRequest.objects.filter(status='PENDING').count()
+        extra_context['live_status'] = {
+            'is_open': is_open,
+            'reason': reason,
+            'pending': pending,
+            'max': ctrl.max_pending_requests,
+        }
+        return super().changelist_view(request, extra_context=extra_context)
 
 class WishlistItemInline(admin.TabularInline):
     model = WishlistItem
@@ -141,7 +249,7 @@ class WishlistAdmin(admin.ModelAdmin):
     inlines = [WishlistItemInline]
     
     def get_item_count(self, obj):
-        return obj.item_count
+        return obj.items.count()
     get_item_count.short_description = 'Items'
 
 
