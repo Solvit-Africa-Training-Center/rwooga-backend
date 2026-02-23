@@ -7,7 +7,6 @@ from orders.models import Order
 
 
 class PaymentSerializer(serializers.ModelSerializer):
-    """Serializer for payment details"""
     order_number = serializers.CharField(source='order.order_number', read_only=True)
     user_name = serializers.CharField(source='user.full_name', read_only=True)
     payment_method_display = serializers.CharField(source='get_payment_method_display', read_only=True)
@@ -63,7 +62,7 @@ class PaymentSerializer(serializers.ModelSerializer):
 
 
 class MobileMoneyPaymentSerializer(serializers.Serializer):
-    """Serializer for initiating Mobile Money payment"""
+  
     order = serializers.PrimaryKeyRelatedField(
         queryset=Order.objects.all(),
         help_text="Order ID to pay for"
@@ -84,12 +83,10 @@ class MobileMoneyPaymentSerializer(serializers.Serializer):
     customer_email = serializers.EmailField(required=False)
     callback_url = serializers.URLField(required=False, allow_blank=True)
     
-    def validate_phone_number(self, value):
-        """Validate Rwanda phone number format"""
-        # Remove spaces and special characters
-        phone = value.replace(' ', '').replace('-', '').replace('+', '')
-        
-        # Check if it's a valid Rwanda number
+    def validate_phone_number(self, value):     
+     
+        phone = value.replace(' ', '').replace('-', '').replace('+', '')    
+   
         if not phone.startswith('250'):
             if phone.startswith('0'):
                 # Convert 07XX to 2507XX
@@ -107,29 +104,29 @@ class MobileMoneyPaymentSerializer(serializers.Serializer):
         return phone
     
     def validate_order(self, value):
-        """Validate order can be paid"""
+    
         request = self.context.get('request')
         if not request:
             raise serializers.ValidationError("Request context is required")
         
         user = request.user
         
-        # Check order belongs to user (unless admin)
+    
         if not (user.is_staff or getattr(user, 'is_admin', False)):
             if value.user != user:
                 raise serializers.ValidationError("You can only pay for your own orders.")
         
-        # Check order status
+       
         if value.status != 'PENDING':
             raise serializers.ValidationError(
                 f"Cannot pay for order with status '{value.get_status_display()}'. Only PENDING orders can be paid."
             )
         
-        # Check if there's already a successful payment
+      
         if value.payments.filter(status='successful').exists():
             raise serializers.ValidationError("This order has already been paid.")
         
-        # Check if there's a recent pending payment (within last 10 minutes)
+     
         recent_pending = value.payments.filter(
             status__in=['pending', 'processing'],
             created_at__gte=timezone.now() - timezone.timedelta(minutes=10)
@@ -142,7 +139,7 @@ class MobileMoneyPaymentSerializer(serializers.Serializer):
         return value
     
     def validate(self, attrs):
-        """Additional validation"""
+       
         order = attrs.get('order')
         
         # Ensure order amount is positive

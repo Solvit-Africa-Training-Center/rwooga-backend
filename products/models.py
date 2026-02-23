@@ -95,10 +95,6 @@ class Product(models.Model):
                 counter += 1
             self.slug = slug
 
-        # Auto-calculate volume
-        if self.length and self.width and self.height:
-            self.product_volume = self.length * self.width * self.height
-
         super().save(*args, **kwargs)
 
     def get_final_price(self):
