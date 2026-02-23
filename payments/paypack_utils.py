@@ -50,9 +50,7 @@ class PaypackService:
 
             if response.status_code == 200:
                 data = response.json()
-                self.token = data.get('access')
-                # Paypack tokens expire in ~40 minutes. Use 35 minutes (2100s) as a safe
-                # default regardless of what expires_in says, to avoid reusing expired tokens.
+                self.token = data.get('access')             
                 expires_in = data.get('expires_in', 2100)
                 self.token_expiry = time.time() + min(expires_in, 2100) - 60
                 print("Paypack authentication successful")
@@ -241,5 +239,5 @@ class PaypackService:
             return None
 
 
-# Singleton instance — imported across the app
+
 paypack_service = PaypackService()
