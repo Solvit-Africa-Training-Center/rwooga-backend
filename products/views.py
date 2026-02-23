@@ -158,11 +158,19 @@ class CustomRequestViewSet(viewsets.ModelViewSet):
 class ControlRequestViewSet(viewsets.GenericViewSet):
     
     serializer_class = ControlRequestSerializer
+@action(detail=False, methods=['post'])
+def enable(self, request):
+    if not (request.user.is_staff or request.user.is_superuser):
+        return Response({"error": "Not allowed."}, status=status.HTTP_403_FORBIDDEN)
+    ControlRequest.objects.filter(pk=1).update(allow_custom_requests=True)
+    return Response({"message": "Custom requests ENABLED."})
 
-    def get_permissions(self):
-        if self.action in ['enable', 'disable', 'update_settings']:
-            return [permissions.IsAdminUser()]
-        return [permissions.AllowAny()]
+@action(detail=False, methods=['post'])
+def disable(self, request):
+    if not (request.user.is_staff or request.user.is_superuser):
+        return Response({"error": "Not allowed."}, status=status.HTTP_403_FORBIDDEN)
+    ControlRequest.objects.filter(pk=1).update(allow_custom_requests=False)
+    return Response({"message": "Custom requests DISABLED."})
 
     @action(detail=False, methods=['get'])
     def status(self, request):
