@@ -123,6 +123,7 @@ class ControlRequestAdmin(admin.ModelAdmin):
         'pending_count',
         'disable_reason',
     ]
+    list_editable = ['allow_custom_requests', 'max_pending_requests', 'disable_reason']
 
     # ── Fields shown in the change-form ──────────────────────────────────────
     fieldsets = (
