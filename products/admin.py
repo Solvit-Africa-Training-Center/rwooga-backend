@@ -1,5 +1,7 @@
 from django.contrib import admin
-from .models import ServiceCategory, Product, ProductMedia, Feedback, CustomRequest, Wishlist, WishlistItem, Discount, ProductDiscount
+from django.shortcuts import redirect
+from django.contrib import messages
+from .models import ServiceCategory, Product, ProductMedia, Feedback, CustomRequest,ControlRequest, Wishlist, WishlistItem, Discount, ProductDiscount
 
 
 class ProductMediaInline(admin.TabularInline):
@@ -109,6 +111,21 @@ class CustomRequestAdmin(admin.ModelAdmin):
         queryset.update(status='CANCELLED')
     mark_cancelled.short_description = "Mark as Cancelled"
 
+
+
+@admin.register(ControlRequest)
+class ControlRequestAdmin(admin.ModelAdmin):
+    list_display = ['allow_custom_requests', 'max_pending_requests', 'pending_count']
+    fields = ['allow_custom_requests', 'max_pending_requests', 'disable_reason']
+
+    def has_add_permission(self, request):
+        return not ControlRequest.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def pending_count(self, obj):
+        return CustomRequest.objects.filter(status='PENDING').count()
 
 class WishlistItemInline(admin.TabularInline):
     model = WishlistItem

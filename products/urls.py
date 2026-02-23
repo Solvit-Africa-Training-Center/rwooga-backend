@@ -6,6 +6,7 @@ from .views import (
     ProductMediaViewSet,
     FeedbackViewSet,
     CustomRequestViewSet,
+    ControlRequestViewSet,
     WishlistItemViewSet,
     WishlistViewSet,
     DiscountViewSet,
@@ -18,6 +19,7 @@ router.register('products', ProductViewSet)
 router.register('media', ProductMediaViewSet)
 router.register('feedback', FeedbackViewSet)
 router.register('custom-requests', CustomRequestViewSet)
+router.register('control-requests', ControlRequestViewSet, basename='control-request')
 router.register('wishlist', WishlistViewSet, basename='wishlist')
 router.register('wishlist-items', WishlistItemViewSet, basename='wishlist-item')
 router.register('discounts', DiscountViewSet)

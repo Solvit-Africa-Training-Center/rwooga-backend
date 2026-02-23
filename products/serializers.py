@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomRequest, ServiceCategory, Product, ProductMedia, Feedback, Wishlist, WishlistItem, Discount, ProductDiscount
+from .models import CustomRequest,ControlRequest, ServiceCategory, Product, ProductMedia, Feedback, Wishlist, WishlistItem, Discount, ProductDiscount
 
 # Absolute base URL of the deployed backend — used as fallback when request
 # context is not available in the serializer (e.g. background tasks, seeds).
@@ -218,7 +218,30 @@ class ProductListSerializer(serializers.ModelSerializer):
             return obj.get_final_price()
         except Exception:
             return obj.unit_price
-    
+        
+class ControlRequestSerializer(serializers.ModelSerializer):
+    pending_count = serializers.SerializerMethodField()
+    requests_status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ControlRequest
+        fields = [
+            'allow_custom_requests',
+            'max_pending_requests',
+            'disable_reason',
+            'pending_count',
+            'requests_status',
+        ]
+
+    def get_pending_count(self, obj) -> int:
+        return CustomRequest.objects.filter(status='PENDING').count()
+
+    def get_requests_status(self, obj) -> str:
+        is_open, reason = ControlRequest.requests_are_open()
+        return "open" if is_open else f"closed — {reason}"
+
+
+
 class CustomRequestSerializer(serializers.ModelSerializer):
     service_category = serializers.PrimaryKeyRelatedField(
         queryset=ServiceCategory.objects.all(),
@@ -236,12 +259,21 @@ class CustomRequestSerializer(serializers.ModelSerializer):
             'description', 'reference_file', 'budget', 'status',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'status', 'created_at', 'updated_at']  
+
+    def validate(self, data):
+    
+        if self.instance is None:
+            is_open, reason = ControlRequest.requests_are_open()
+            if not is_open:
+                raise serializers.ValidationError({"non_field_errors": reason})
+        return data
 
     def validate_status(self, value):
         if value not in ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']:
             raise serializers.ValidationError("Invalid status")
         return value
+
     def update(self, instance, validated_data):
         request = self.context.get('request')
         if request and request.user and request.user.is_staff:
@@ -257,7 +289,6 @@ class CustomRequestSerializer(serializers.ModelSerializer):
         instance.description = validated_data.get('description', instance.description)
         instance.reference_file = validated_data.get('reference_file', instance.reference_file)
         instance.budget = validated_data.get('budget', instance.budget)
-
         instance.save()
         return instance
 

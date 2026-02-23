@@ -296,6 +296,57 @@ class CustomRequest(models.Model):
 
     def __str__(self):
         return f"{self.client_name} - {self.title}"
+    
+#
+
+class ControlRequest(models.Model):  
+    
+    allow_custom_requests = models.BooleanField(
+        default=True,       
+    )
+    max_pending_requests = models.IntegerField(
+        default=10,
+       
+    )
+    disable_reason = models.CharField(
+        max_length=500,
+        blank=True,
+       
+    )
+
+    class Meta:
+        verbose_name = "Control Request"
+        verbose_name_plural = "Control Requests"
+
+    def __str__(self):
+        return "Control Requests"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1  
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+    @classmethod
+    def requests_are_open(cls):
+      
+        settings = cls.get()
+
+        if not settings.allow_custom_requests:
+            return False, settings.disable_reason or "Custom requests are currently disabled. Please check back later."
+
+        if settings.max_pending_requests > 0:
+            pending_count = CustomRequest.objects.filter(status='PENDING').count()
+            if pending_count >= settings.max_pending_requests:
+                return False, (
+                    f"We currently have {pending_count} pending requests and cannot accept new ones. "
+                    "Please check back soon."
+                )
+
+        return True, None
 
 class Wishlist(models.Model):
     """Per-user wishlist container. Products are stored in WishlistItem."""

@@ -5,11 +5,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from django.db.models import Avg
-from .models import ServiceCategory, Product, ProductMedia, Feedback, CustomRequest, Wishlist, WishlistItem, Discount, ProductDiscount
+from .models import ServiceCategory, Product, ProductMedia, Feedback, CustomRequest, ControlRequest, Wishlist, WishlistItem, Discount, ProductDiscount
 from .permissions import AnyoneCanCreateRequest, IsOwnerOnly, IsStaffOnly, CustomerCanCreateFeedback
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from .serializers import (
     CustomRequestSerializer,
+    ControlRequestSerializer,
     ServiceCategorySerializer,
     ProductSerializer,
     ProductListSerializer,
@@ -153,13 +154,69 @@ class CustomRequestViewSet(viewsets.ModelViewSet):
     serializer_class = CustomRequestSerializer
     permission_classes = [AnyoneCanCreateRequest]
     
+@extend_schema(tags=["ControlRequest"])
+class ControlRequestViewSet(viewsets.GenericViewSet):
+    
+    serializer_class = ControlRequestSerializer
+
+    def get_permissions(self):
+        if self.action in ['enable', 'disable', 'update_settings']:
+            return [permissions.IsAdminUser()]
+        return [permissions.AllowAny()]
+
+    @action(detail=False, methods=['get'])
+    def status(self, request):
+        """Public endpoint — returns whether requests are currently open."""
+        is_open, reason = ControlRequest.requests_are_open()
+        settings = ControlRequest.get()
+        return Response({
+            "is_open": is_open,
+            "reason": reason,
+            "pending_count": CustomRequest.objects.filter(status='PENDING').count(),
+            "max_pending_requests": settings.max_pending_requests,
+        })
+
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAdminUser])
+    def enable(self, request):
+        """Admin: Open custom request submissions."""
+        settings = ControlRequest.get()
+        settings.allow_custom_requests = True
+        settings.save()
+        return Response({
+            "message": " Custom requests are now ENABLED.",
+            "allow_custom_requests": True,
+        })
+
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAdminUser])
+    def disable(self, request):
+        """Admin: Close custom request submissions."""
+        settings = ControlRequest.get()
+        settings.allow_custom_requests = False
+        reason = request.data.get('reason', '')
+        if reason:
+            settings.disable_reason = reason
+        settings.save()
+        return Response({
+            "message": " Custom requests are now DISABLED.",
+            "allow_custom_requests": False,
+            "disable_reason": settings.disable_reason,
+        })
+
+    @action(detail=False, methods=['patch'], permission_classes=[permissions.IsAdminUser])
+    def update_settings(self, request):
+        """Admin: Update threshold, toggle, and message in one call."""
+        settings = ControlRequest.get()
+        serializer = ControlRequestSerializer(settings, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+    
+
+    
     
 @extend_schema(tags=["View Wishlist"])
 class WishlistViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    Retrieve user's wishlist
-    Use WishlistItemViewSet to add/remove items
-    """
+    
     serializer_class = WishlistSerializer
     permission_classes = [IsOwnerOnly]
     
