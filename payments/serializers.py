@@ -143,7 +143,7 @@ class MobileMoneyPaymentSerializer(serializers.Serializer):
         order = attrs.get('order')
         
         # Ensure order amount is positive
-        if order and order.final_amount <= 0:
+        if order and order.total_amount <= 0:
             raise serializers.ValidationError("Order amount must be greater than zero")
         
         return attrs
@@ -167,7 +167,7 @@ class MobileMoneyPaymentSerializer(serializers.Serializer):
             transaction_id=transaction_id,
             order=order,
             user=user,
-            amount=order.final_amount,
+            amount=order.total_amount,
             currency='RWF',
             payment_method='momo',
             provider=validated_data['provider'],
@@ -252,7 +252,7 @@ class CardPaymentSerializer(serializers.Serializer):
             transaction_id=transaction_id,
             order=order,
             user=user,
-            amount=order.final_amount,
+            amount=order.total_amount,
             currency='RWF',
             payment_method='card',
             provider=validated_data['provider'],

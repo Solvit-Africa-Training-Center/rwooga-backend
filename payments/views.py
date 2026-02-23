@@ -101,6 +101,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
                 payment.save()
                 
                 return Response({
+                    'payment_id': str(payment.id),
                     'transaction_id': payment.transaction_id,
                     'status': payment.status,
                     'message': 'Payment initiated successfully. Please check your phone to complete the payment.',
@@ -146,10 +147,10 @@ class PaymentViewSet(viewsets.ModelViewSet):
        
         
         return Response({
+            'payment_id': str(payment.id),
             'transaction_id': payment.transaction_id,
             'status': payment.status,
             'message': 'Card payment is being processed',
-            'payment_id': str(payment.id),
         }, status=status.HTTP_201_CREATED)
     
     @action(detail=True, methods=['get'], url_path='status')
