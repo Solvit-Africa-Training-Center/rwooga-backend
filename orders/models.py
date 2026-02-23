@@ -28,7 +28,7 @@ class Order(models.Model):
         help_text="Order-level discount applied at checkout"
     )
   
-    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -58,7 +58,7 @@ class Order(models.Model):
 
     @property
     def total_amount(self):
-        return max(self.subtotal - self.discount_amount, Decimal("0.00"))
+        return max(self.subtotal - Decimal(str(self.discount_amount)), Decimal("0.00"))
 
     def __str__(self):
         return f"Order {self.id} - {self.user.email}"
