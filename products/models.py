@@ -182,6 +182,11 @@ class Feedback(models.Model):
     published = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Feedback"
+        verbose_name_plural = "Feedback"
+
     def __str__(self):
         return f"{self.client_name} - {self.product.name}"
 
@@ -231,13 +236,10 @@ class ProductDiscount(models.Model):
 
     class Meta:
         unique_together = ("product", "discount")
+        ordering = ['-created_at']
 
     def __str__(self):
         return f"{self.product.name} - {self.discount.name}"
-    class Meta:
-        ordering = ['-created_at']
-        verbose_name = "Feedback"
-        verbose_name_plural = "Feedback"
 
 #customer request
 class CustomRequest(models.Model):
@@ -296,20 +298,23 @@ class CustomRequest(models.Model):
         return f"{self.client_name} - {self.title}"
 
 class Wishlist(models.Model):
+    """Per-user wishlist container. Products are stored in WishlistItem."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="wishlisted_by")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="wishlists")
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="wishlist"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
-        unique_together = ['user', 'product']  
         ordering = ['-created_at']
         verbose_name = "Wishlist"
         verbose_name_plural = "Wishlists"
 
     def __str__(self):
-        return f"{self.user.full_name} - {self.product.name}"
+        return f"Wishlist of {self.user}"
 
 class WishlistItem(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

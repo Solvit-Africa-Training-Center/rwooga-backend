@@ -169,7 +169,7 @@ class WishlistViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=['get'])
     def my_wishlist(self, request):
         """Get or create user's wishlist"""
-        wishlist, created = Wishlist.objects.get_or_create(user=request.user)
+        wishlist, _ = Wishlist.objects.get_or_create(user=request.user)
         serializer = self.get_serializer(wishlist)
         return Response(serializer.data)
 
