@@ -172,9 +172,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class FeedbackSerializer(serializers.ModelSerializer):
-    user = serializers.UUIDField(source='user.id', read_only=True)
     product_name = serializers.ReadOnlyField(source='product.name')
-    user_name = serializers.ReadOnlyField(source='user.full_name')
 
     class Meta:
         model = Feedback
@@ -186,9 +184,9 @@ class FeedbackSerializer(serializers.ModelSerializer):
             "message",
             "rating",
             "published",
-            "created_at",'user', 'user_name'
+            "created_at",
         ]
-        read_only_fields = ['id', 'published', 'created_at','user']
+        read_only_fields = ['id', 'published', 'created_at']
 
 
 class ProductListSerializer(serializers.ModelSerializer):

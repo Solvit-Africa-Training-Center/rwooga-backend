@@ -24,16 +24,17 @@ class IsStaffOnly(permissions.BasePermission):
 
 class CustomerCanCreateFeedback(permissions.BasePermission):
     """
-    Anyone can create feedback and view published ones
-    Only staff can moderate (publish/unpublish)
+    Anyone (including guests) can create feedback and view published ones.
+    Only staff can moderate (publish/unpublish) or delete.
     """
     def has_permission(self, request, view):
         if view.action in ['list', 'retrieve']:
             return True
 
         if view.action == 'create':
-            return request.user and request.user.is_authenticated
-        # Only staff can update/delete feedback
+            return True  # Open to everyone — admin approves before publishing
+
+        # Only staff can update/delete/moderate feedback
         return request.user and request.user.is_authenticated and request.user.is_staff
 
 class AnyoneCanCreateRequest(permissions.BasePermission):

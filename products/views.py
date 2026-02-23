@@ -120,15 +120,17 @@ class FeedbackViewSet(viewsets.ModelViewSet):
     authentication_classes = []
     
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        # Feedback model has no user FK — client_name is used instead
+        serializer.save()
 
     def get_queryset(self):
         qs = super().get_queryset()
-        
-        # Non-staff users only see published feedback
-        if not self.request.user.is_staff:
+
+        # Non-staff (and guests) only see published feedback
+        is_staff = self.request.user.is_authenticated and self.request.user.is_staff
+        if not is_staff:
             qs = qs.filter(published=True)
-        
+
         # Filter by product
         product_id = self.request.query_params.get('product')
         if product_id:
