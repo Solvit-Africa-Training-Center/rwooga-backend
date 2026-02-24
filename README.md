@@ -143,7 +143,7 @@ rwooga-backend/
 ## Usage
 
 - API root: `http://127.0.0.1:8000/api/v1/`
-- Swagger docs: `http://127.0.0.1:8000/api/schema/swagger-ui/`
+- Swagger docs: `http://127.0.0.1:8000/api/docs/`
 - Django admin: `http://127.0.0.1:8000/admin/`
 
 ## Contributing
@@ -155,6 +155,3 @@ rwooga-backend/
 
 > **Note:** Do not push directly to `main`. Always submit a pull request for review.
 
-## License
-
-This project is licensed under the MIT License.
