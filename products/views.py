@@ -154,7 +154,12 @@ class CustomRequestViewSet(viewsets.ModelViewSet):
     serializer_class = CustomRequestSerializer
     permission_classes = [AnyoneCanCreateRequest]
     
-@extend_schema(tags=["ControlRequest"])
+@extend_schema(
+    tags=["Request Control"],
+    summary="Update request control settings",
+    description="Allows admin/staff to update the custom request settings",
+    request=ControlRequestSerializer,
+    responses={200: ControlRequestSerializer},)
 class ControlRequestViewSet(viewsets.GenericViewSet):
 
     serializer_class = ControlRequestSerializer
@@ -200,16 +205,8 @@ class ControlRequestViewSet(viewsets.GenericViewSet):
             "message": "Custom requests are now DISABLED.",
             "allow_custom_requests": False,
             "disable_reason": ctrl.disable_reason,
-        })
-        
-    
-    @extend_schema(
-    tags=["Request Control"],
-    summary="Update request control settings",
-    description="Allows admin/staff to update the custom request settings",
-    request=ControlRequestSerializer,
-    responses={200: ControlRequestSerializer},)
-
+        })     
+  
     @action(detail=False, methods=['patch'], permission_classes=[permissions.IsAdminUser])
     def update_settings(self, request):
         
