@@ -17,11 +17,15 @@ class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
     subtotal = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     total_amount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    user_email = serializers.EmailField(source='user.email', read_only=True)
+    user_phone = serializers.CharField(source='user.phone_number', read_only=True)
+    discount_name = serializers.CharField(source='discount.name', read_only=True)
 
     class Meta:
         model = Order
         fields = [
-            'id', 'user', 'discount', 'discount_amount',
+            'id', 'user', 'user_email', 'user_phone', 
+            'discount', 'discount_name', 'discount_amount',
             'subtotal', 'total_amount', 'status',
             'items', 'created_at', 'updated_at'
         ]
