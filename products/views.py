@@ -153,6 +153,21 @@ class CustomRequestViewSet(viewsets.ModelViewSet):
     queryset = CustomRequest.objects.all()
     serializer_class = CustomRequestSerializer
     permission_classes = [AnyoneCanCreateRequest]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.request.user.is_authenticated:
+            if self.request.user.is_staff:
+                return qs
+            return qs.filter(user=self.request.user)
+        # For guests, they can't list anything (permissions already handle this but good to be explicit)
+        return qs.none()
+
+    def perform_create(self, serializer):
+        if self.request.user.is_authenticated:
+            serializer.save(user=self.request.user)
+        else:
+            serializer.save()
     
 @extend_schema(
     tags=["Request Control"],

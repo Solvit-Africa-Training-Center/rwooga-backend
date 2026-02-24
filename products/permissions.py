@@ -39,14 +39,26 @@ class CustomerCanCreateFeedback(permissions.BasePermission):
 
 class AnyoneCanCreateRequest(permissions.BasePermission):
     """
-    Anyone can create a custom request
-    Only staff can view all requests and update status
+    Anyone can create a custom request.
+    Users can view and manage their own requests.
+    Staff can view and manage all requests.
     """
     def has_permission(self, request, view):
         # Anyone can create
         if view.action == 'create':
             return True
-        return request.user and request.user.is_authenticated and request.user.is_staff
+        
+        # Must be authenticated for other actions
+        return request.user and request.user.is_authenticated
+
+    def has_object_permission(self, request, view, obj):
+        # Staff can do anything
+        if request.user.is_staff:
+            return True
+            
+        # Users can only access their own requests
+        # If the request has no user, it belongs to no one (only staff)
+        return obj.user == request.user
     
 class IsOwnerOnly(permissions.BasePermission):
     """

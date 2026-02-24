@@ -254,12 +254,12 @@ class CustomRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomRequest
         fields = [
-            'id', 'client_name', 'client_email', 'client_phone',
+            'id', 'user', 'client_name', 'client_email', 'client_phone',
             'service_category', 'service_category_name', 'title', 
             'description', 'reference_file', 'budget', 'status',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'status', 'created_at', 'updated_at']  
+        read_only_fields = ['id', 'user', 'status', 'created_at', 'updated_at']  
 
     def validate(self, data):
     
