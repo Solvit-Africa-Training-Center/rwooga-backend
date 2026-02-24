@@ -1,35 +1,17 @@
-from rest_framework import viewsets, status, permissions, filters
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, IsAdminUser, BasePermission
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from .models import Order, Refund, Return
-from .serializers import (
-    OrderSerializer,
-    RefundSerializer,
-    RefundCompleteSerializer,
-    ReturnApproveSerializer,
-    ReturnRejectSerializer,
-    ReturnSerializer,
-)
-
-
-class IsAdminOrStaff(BasePermission):
-    """Allow access only to admin or staff users."""
-    def has_permission(self, request, view):
-        return bool(
-            request.user and
-            request.user.is_authenticated and
-            (request.user.is_staff or getattr(request.user, 'is_admin', False))
-        )
+from .serializers import OrderSerializer, RefundSerializer, RefundCompleteSerializer, ReturnApproveSerializer, ReturnRejectSerializer, ReturnSerializer
 
 
 @extend_schema(tags=["Orders"])
 class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    http_method_names = ['get', 'post', 'patch', 'delete']  
 
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
@@ -37,6 +19,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         user = self.request.user
 
+     
         if user.is_staff:
             return Order.objects.prefetch_related('items__product').all()
 
@@ -86,9 +69,9 @@ class OrderViewSet(viewsets.ModelViewSet):
             "items_count": order.items.count(),
         })
 
-
 @extend_schema(tags=["Returns"])
 class ReturnViewSet(viewsets.ModelViewSet):
+ 
     serializer_class = ReturnSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -105,9 +88,11 @@ class ReturnViewSet(viewsets.ModelViewSet):
 
         user = self.request.user
 
+        # Admin/staff see all returns
         if user.is_staff or getattr(user, 'is_admin', False):
             return Return.objects.all().select_related('order', 'user')
 
+        # Regular users see only their own returns
         return Return.objects.filter(user=user).select_related('order')
 
     def get_permissions(self):
@@ -115,7 +100,6 @@ class ReturnViewSet(viewsets.ModelViewSet):
             return [IsAdminOrStaff()]
         return [permissions.IsAuthenticated()]
 
-    @extend_schema(summary="Approve a return request (admin/staff only)")
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
         """Approve a return request. Admin/staff only."""
@@ -135,7 +119,6 @@ class ReturnViewSet(viewsets.ModelViewSet):
 
         return Response(ReturnSerializer(return_obj, context={'request': request}).data)
 
-    @extend_schema(summary="Reject a return request (admin/staff only)")
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
         """Reject a return request with a reason. Admin/staff only."""
@@ -154,7 +137,6 @@ class ReturnViewSet(viewsets.ModelViewSet):
 
         return Response(ReturnSerializer(return_obj, context={'request': request}).data)
 
-    @extend_schema(summary="Mark a return as completed (admin/staff only)")
     @action(detail=True, methods=['post'])
     def complete(self, request, pk=None):
         """Mark a return as completed. Admin/staff only."""
@@ -171,8 +153,7 @@ class ReturnViewSet(viewsets.ModelViewSet):
 
         return Response(ReturnSerializer(return_obj, context={'request': request}).data)
 
-    @extend_schema(summary="Cancel your own return request")
-    @action(detail=True, methods=['post'], url_path='cancel')
+    @action(detail=True, methods=['post'])
     def cancel_return(self, request, pk=None):
         """Cancel a return request. Only the owner can cancel their own REQUESTED return."""
         return_obj = self.get_object()
@@ -194,9 +175,9 @@ class ReturnViewSet(viewsets.ModelViewSet):
 
         return Response(ReturnSerializer(return_obj, context={'request': request}).data)
 
-
-@extend_schema(tags=["Refunds"])
+@extend_schema(tags=["Refund"])
 class RefundViewSet(viewsets.ModelViewSet):
+   
     serializer_class = RefundSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -204,7 +185,6 @@ class RefundViewSet(viewsets.ModelViewSet):
     search_fields = ['refund_number', 'reason']
     ordering_fields = ['created_at', 'amount', 'status']
     ordering = ['-created_at']
-    http_method_names = ['get', 'post', 'head', 'options']
 
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
@@ -214,9 +194,11 @@ class RefundViewSet(viewsets.ModelViewSet):
 
         user = self.request.user
 
+        # Admin/staff see all refunds
         if user.is_staff or getattr(user, 'is_admin', False):
             return Refund.objects.all().select_related('order', 'user')
 
+        # Regular users see only their own refunds
         return Refund.objects.filter(user=user).select_related('order')
 
     def get_permissions(self):
@@ -224,7 +206,6 @@ class RefundViewSet(viewsets.ModelViewSet):
             return [IsAdminOrStaff()]
         return [permissions.IsAuthenticated()]
 
-    @extend_schema(summary="Mark a refund as completed (admin/staff only)")
     @action(detail=True, methods=['post'])
     def complete(self, request, pk=None):
         """Mark refund as completed. Admin/staff only."""
@@ -244,7 +225,6 @@ class RefundViewSet(viewsets.ModelViewSet):
 
         return Response(RefundSerializer(refund, context={'request': request}).data)
 
-    @extend_schema(summary="Mark a refund as failed (admin/staff only)")
     @action(detail=True, methods=['post'])
     def fail(self, request, pk=None):
         """Mark a refund as failed. Admin/staff only."""

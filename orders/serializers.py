@@ -17,15 +17,11 @@ class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
     subtotal = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     total_amount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
-    user_email = serializers.EmailField(source='user.email', read_only=True)
-    user_phone = serializers.CharField(source='user.phone_number', read_only=True)
-    discount_name = serializers.CharField(source='discount.name', read_only=True)
 
     class Meta:
         model = Order
         fields = [
-            'id', 'user', 'user_email', 'user_phone', 
-            'discount', 'discount_name', 'discount_amount',
+            'id', 'user', 'discount', 'discount_amount',
             'subtotal', 'total_amount', 'status',
             'items', 'created_at', 'updated_at'
         ]
@@ -63,7 +59,7 @@ class OrderSerializer(serializers.ModelSerializer):
         return order
 class ReturnSerializer(serializers.ModelSerializer):
     """Serializer for return requests"""
-    order_id = serializers.CharField(source='order.id', read_only=True)
+    order_number = serializers.CharField(source='order.order_number', read_only=True)
     user_name = serializers.CharField(source='user.full_name', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     is_active = serializers.BooleanField(read_only=True)
@@ -74,7 +70,7 @@ class ReturnSerializer(serializers.ModelSerializer):
             'id',
             'return_number',
             'order',
-            'order_id',
+            'order_number',
             'user',
             'user_name',
             'reason',
@@ -160,7 +156,7 @@ class ReturnRejectSerializer(serializers.Serializer):
 
 class RefundSerializer(serializers.ModelSerializer):
     """Serializer for refunds"""
-    order_id = serializers.CharField(source='order.id', read_only=True)
+    order_number = serializers.CharField(source='order.order_number', read_only=True)
     user_name = serializers.CharField(source='user.full_name', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     
@@ -170,7 +166,7 @@ class RefundSerializer(serializers.ModelSerializer):
             'id',
             'refund_number',
             'order',
-            'order_id',
+            'order_number',
             'user',
             'user_name',
             'amount',
