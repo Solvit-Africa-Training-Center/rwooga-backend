@@ -1,6 +1,6 @@
 from rest_framework import viewsets, status, permissions, filters
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, BasePermission
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
@@ -11,11 +11,21 @@ from .serializers import (
 )
 
 
+class IsAdminOrStaff(BasePermission):
+    """Allow access only to admin or staff users."""
+    def has_permission(self, request, view):
+        return bool(
+            request.user and
+            request.user.is_authenticated and
+            (request.user.is_staff or getattr(request.user, 'is_admin', False))
+        )
+
+
 @extend_schema(tags=["Orders"])
 class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
-    http_method_names = ['get', 'post', 'patch', 'delete']  
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
@@ -23,7 +33,6 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         user = self.request.user
 
-     
         if user.is_staff:
             return Order.objects.prefetch_related('items__product').all()
 
@@ -73,11 +82,11 @@ class OrderViewSet(viewsets.ModelViewSet):
             "items_count": order.items.count(),
         })
 
+
 @extend_schema(tags=["Returns"])
 class ReturnViewSet(viewsets.ModelViewSet):
- 
     serializer_class = ReturnSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status']
     search_fields = ['return_number', 'reason', 'detailed_reason']
@@ -92,17 +101,15 @@ class ReturnViewSet(viewsets.ModelViewSet):
 
         user = self.request.user
 
-        # Admin/staff see all returns
         if user.is_staff or getattr(user, 'is_admin', False):
             return Return.objects.all().select_related('order', 'user')
 
-        # Regular users see only their own returns
         return Return.objects.filter(user=user).select_related('order')
 
     def get_permissions(self):
         if self.action in ('approve', 'reject', 'complete'):
             return [IsAdminOrStaff()]
-        return [permissions.IsAuthenticated()]
+        return [IsAuthenticated()]
 
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
@@ -179,11 +186,11 @@ class ReturnViewSet(viewsets.ModelViewSet):
 
         return Response(ReturnSerializer(return_obj, context={'request': request}).data)
 
+
 @extend_schema(tags=["Refund"])
 class RefundViewSet(viewsets.ModelViewSet):
-   
     serializer_class = RefundSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status']
     search_fields = ['refund_number', 'reason']
@@ -198,17 +205,15 @@ class RefundViewSet(viewsets.ModelViewSet):
 
         user = self.request.user
 
-        # Admin/staff see all refunds
         if user.is_staff or getattr(user, 'is_admin', False):
             return Refund.objects.all().select_related('order', 'user')
 
-        # Regular users see only their own refunds
         return Refund.objects.filter(user=user).select_related('order')
 
     def get_permissions(self):
         if self.action in ('complete', 'fail'):
             return [IsAdminOrStaff()]
-        return [permissions.IsAuthenticated()]
+        return [IsAuthenticated()]
 
     @action(detail=True, methods=['post'])
     def complete(self, request, pk=None):
