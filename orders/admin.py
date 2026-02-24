@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Order, OrderItem
+from .models import Order, OrderItem, Refund, Return
 
 
 class OrderItemInline(admin.TabularInline):
@@ -46,3 +46,47 @@ class OrderItemAdmin(admin.ModelAdmin):
     def get_total_cost(self, obj):
         return f"{obj.total_cost} RWF"
     get_total_cost.short_description = "Line Total"
+    
+@admin.register(Return)
+class ReturnAdmin(admin.ModelAdmin):
+    list_display = ('return_number', 'order', 'user', 'status', 'requested_refund_amount', 'approved_refund_amount', 'created_at')
+    list_filter = ('status', 'created_at')
+    search_fields = ('return_number', 'order__id', 'user__email', 'user__full_name', 'reason')
+    readonly_fields = ('id', 'return_number', 'user', 'created_at', 'approved_at')
+    ordering = ('-created_at',)
+
+    fieldsets = (
+        ('Return Info', {
+            'fields': ('id', 'return_number', 'order', 'user', 'status')
+        }),
+        ('Reason', {
+            'fields': ('reason', 'detailed_reason', 'rejection_reason')
+        }),
+        ('Amounts', {
+            'fields': ('requested_refund_amount', 'approved_refund_amount')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'approved_at')
+        }),
+    )
+
+
+@admin.register(Refund)
+class RefundAdmin(admin.ModelAdmin):
+    list_display = ('refund_number', 'order', 'user', 'amount', 'status', 'created_at', 'completed_at')
+    list_filter = ('status', 'created_at')
+    search_fields = ('refund_number', 'order__id', 'user__email', 'user__full_name', 'reason')
+    readonly_fields = ('id', 'refund_number', 'user', 'created_at', 'completed_at')
+    ordering = ('-created_at',)
+
+    fieldsets = (
+        ('Refund Info', {
+            'fields': ('id', 'refund_number', 'order', 'user', 'status')
+        }),
+        ('Details', {
+            'fields': ('amount', 'reason', 'transaction_id')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'completed_at')
+        }),
+    )
