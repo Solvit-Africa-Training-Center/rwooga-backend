@@ -17,7 +17,7 @@ class FeedbackInline(admin.TabularInline):
 
 @admin.register(ServiceCategory)
 class ServiceCategoryAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'is_active', 'created_at']  # Removed duplicate 'id'
+    list_display = ['id', 'name', 'is_active', 'created_at'] 
     list_filter = ['is_active']
     search_fields = ['name']
     prepopulated_fields = {'slug': ('name',)}
@@ -28,7 +28,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'category', 'unit_price', 'published', 'created_at']
     list_filter = ['published', 'category', 'created_at']
     search_fields = ['name', 'short_description']
-    readonly_fields = ['slug', 'created_at', 'updated_at']  # Removed 'product_volume'
+    readonly_fields = ['slug', 'created_at', 'updated_at']  
     inlines = [ProductMediaInline, FeedbackInline]
     
     fieldsets = (
@@ -39,10 +39,10 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': ('unit_price', 'currency')
         }),
         ('Dimensions', {
-            'fields': ('length', 'width', 'height', 'measurement_unit', 'material')  # Removed 'product_volume'
+            'fields': ('length', 'width', 'height', 'measurement_unit', 'material')  
         }),
         ('Product Variations', {
-            'fields': ('available_sizes', 'available_colors', 'available_materials'),  # Removed duplicate
+            'fields': ('available_sizes', 'available_colors', 'available_materials'),  
             'description': 'Enter comma-separated values (e.g., Small, Medium, Large)'
         }),
         ('Publishing', {
@@ -115,7 +115,7 @@ class CustomRequestAdmin(admin.ModelAdmin):
 
 @admin.register(ControlRequest)
 class ControlRequestAdmin(admin.ModelAdmin):
-    # ── Columns shown in the changelist ──────────────────────────────────────
+    
     list_display = [
         'status_badge',
         'allow_custom_requests',
@@ -125,7 +125,7 @@ class ControlRequestAdmin(admin.ModelAdmin):
     ]
     list_editable = ['allow_custom_requests', 'max_pending_requests', 'disable_reason']
 
-    # ── Fields shown in the change-form ──────────────────────────────────────
+   
     fieldsets = (
         ('Toggle', {
             'fields': ('allow_custom_requests',),
@@ -147,19 +147,19 @@ class ControlRequestAdmin(admin.ModelAdmin):
         }),
     )
 
-    # ── Bulk actions (work from the changelist checkboxes) ────────────────────
+   
     actions = ['action_enable_requests', 'action_disable_requests']
 
-    # ── Singleton guard ───────────────────────────────────────────────────────
+ 
     def has_add_permission(self, request):
-        """Only allow adding when no record exists yet (singleton pattern)."""
+      
         return not ControlRequest.objects.exists()
 
     def has_delete_permission(self, request, obj=None):
-        """Prevent accidental deletion of the singleton record."""
+       
         return False
 
-    # ── Custom display methods ────────────────────────────────────────────────
+
     @admin.display(description='Status')
     def status_badge(self, obj):
         from django.utils.html import format_html
@@ -183,7 +183,7 @@ class ControlRequestAdmin(admin.ModelAdmin):
             colour, count, cap if cap else '∞',
         )
 
-    # ── Quick-action helpers ──────────────────────────────────────────────────
+
     @admin.action(description=' Enable custom-request submissions')
     def action_enable_requests(self, request, queryset):
         ctrl = ControlRequest.get()
@@ -206,7 +206,7 @@ class ControlRequestAdmin(admin.ModelAdmin):
             messages.WARNING,
         )
 
-    # ── Override change_view to always redirect to the singleton record ───────
+   
     def change_view(self, request, object_id, form_url='', extra_context=None):
         extra_context = extra_context or {}
         ctrl = ControlRequest.get()
@@ -222,10 +222,10 @@ class ControlRequestAdmin(admin.ModelAdmin):
 
     def changelist_view(self, request, extra_context=None):
         """Auto-redirect to the singleton edit page when there is exactly one record."""
-        ctrl = ControlRequest.get()          # ensure the record exists
+        ctrl = ControlRequest.get()          
         extra_context = extra_context or {}
 
-        # Inject a live summary banner into the changelist
+       
         is_open, reason = ControlRequest.requests_are_open()
         pending = CustomRequest.objects.filter(status='PENDING').count()
         extra_context['live_status'] = {

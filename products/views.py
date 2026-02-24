@@ -167,7 +167,7 @@ class ControlRequestViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[])
     def status(self, request):
-        """Public endpoint — returns whether requests are currently open."""
+       
         is_open, reason = ControlRequest.requests_are_open()
         ctrl = ControlRequest.get()
         return Response({
@@ -179,7 +179,7 @@ class ControlRequestViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=['post'], permission_classes=[permissions.IsAdminUser])
     def enable(self, request):
-        """Admin: Open custom request submissions."""
+        
         ctrl = ControlRequest.get()
         ctrl.allow_custom_requests = True
         ctrl.save()
@@ -189,8 +189,7 @@ class ControlRequestViewSet(viewsets.GenericViewSet):
         })
 
     @action(detail=False, methods=['post'], permission_classes=[permissions.IsAdminUser])
-    def disable(self, request):
-        """Admin: Close custom request submissions."""
+    def disable(self, request):      
         ctrl = ControlRequest.get()
         ctrl.allow_custom_requests = False
         reason = request.data.get('reason', '')
@@ -202,10 +201,18 @@ class ControlRequestViewSet(viewsets.GenericViewSet):
             "allow_custom_requests": False,
             "disable_reason": ctrl.disable_reason,
         })
+        
+    
+    @extend_schema(
+    tags=["Request Control"],
+    summary="Update request control settings",
+    description="Allows admin/staff to update the custom request settings",
+    request=ControlRequestSerializer,
+    responses={200: ControlRequestSerializer},)
 
     @action(detail=False, methods=['patch'], permission_classes=[permissions.IsAdminUser])
     def update_settings(self, request):
-        """Admin: Update threshold, toggle, and message in one call."""
+        
         ctrl = ControlRequest.get()
         serializer = ControlRequestSerializer(ctrl, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
