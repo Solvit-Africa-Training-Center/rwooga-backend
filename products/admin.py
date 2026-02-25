@@ -39,7 +39,7 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': ('unit_price', 'currency')
         }),
         ('Dimensions', {
-            'fields': ('length', 'width', 'height', 'measurement_unit', 'material')  
+            'fields': ('length', 'width', 'height', 'measurement_unit', 'available_materials')  
         }),
         ('Product Variations', {
             'fields': ('available_sizes', 'available_colors', 'available_materials'),  
