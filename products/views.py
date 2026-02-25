@@ -118,7 +118,6 @@ class FeedbackViewSet(viewsets.ModelViewSet):
     queryset = Feedback.objects.all()
     serializer_class = FeedbackSerializer
     permission_classes = [CustomerCanCreateFeedback]
-    authentication_classes = []
     
     def perform_create(self, serializer):
         # Feedback model has no user FK — client_name is used instead
@@ -128,7 +127,9 @@ class FeedbackViewSet(viewsets.ModelViewSet):
         qs = super().get_queryset()
 
         # Non-staff (and guests) only see published feedback
-        is_staff = self.request.user.is_authenticated and self.request.user.is_staff
+        user = self.request.user
+        is_staff = user and user.is_authenticated and user.is_staff
+        
         if not is_staff:
             qs = qs.filter(published=True)
 
@@ -138,14 +139,24 @@ class FeedbackViewSet(viewsets.ModelViewSet):
             qs = qs.filter(product_id=product_id)
         return qs
     
-    @action(detail=True, methods=['post'], permission_classes=[IsStaffOnly])
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
     def moderate(self, request, pk=None):
-        """Toggle feedback published status (staff only)"""
+        """Standardize moderation to follow frontend expectations"""
         feedback = self.get_object()
-        feedback.published = not feedback.published
+        new_status = request.data.get('status')
+        
+        if new_status == 'APPROVED':
+            feedback.published = True
+        elif new_status == 'REJECTED':
+            feedback.published = False
+        else:
+            # Fallback to toggle for safety if no status provided
+            feedback.published = not feedback.published
+            
         feedback.save()
         return Response({
             "published": feedback.published,
+            "status": "APPROVED" if feedback.published else "PENDING",
             "message": f"Feedback {'published' if feedback.published else 'unpublished'}"
         })
 @extend_schema(tags=["Booking or Custom Request"])

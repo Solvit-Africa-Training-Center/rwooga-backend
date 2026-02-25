@@ -173,6 +173,8 @@ class ProductSerializer(serializers.ModelSerializer):
 
 class FeedbackSerializer(serializers.ModelSerializer):
     product_name = serializers.ReadOnlyField(source='product.name')
+    comment = serializers.CharField(source='message')
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Feedback
@@ -182,11 +184,16 @@ class FeedbackSerializer(serializers.ModelSerializer):
             "product_name",
             "client_name",
             "message",
+            "comment",
+            "status",
             "rating",
             "published",
             "created_at",
         ]
         read_only_fields = ['id', 'published', 'created_at']
+
+    def get_status(self, obj) -> str:
+        return "APPROVED" if obj.published else "PENDING"
 
 
 class ProductListSerializer(serializers.ModelSerializer):
