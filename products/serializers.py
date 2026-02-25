@@ -30,19 +30,66 @@ class ServiceCategorySerializer(serializers.ModelSerializer):
 
 
 class ProductMediaSerializer(serializers.ModelSerializer):
+    media_type = serializers.SerializerMethodField()
+    image_url = serializers.SerializerMethodField()
+    video_url = serializers.SerializerMethodField()
+    model_url = serializers.SerializerMethodField()
+
     class Meta:
         model = ProductMedia
         fields = [
             "id",
             "product",
+            "media_type",
             "model_3d",
+            "model_url",
             "image",
+            "image_url",
             "video_file",
             "video_url",
             "alt_text",
             "display_order",
             "uploaded_at",
         ]
+
+    def get_media_type(self, obj) -> str:
+        if obj.image:
+            return "IMAGE"
+        if obj.video_file or (hasattr(obj, 'video_link') and obj.video_link) or (hasattr(obj, 'video_url') and obj.video_url):
+            return "VIDEO"
+        if obj.model_3d:
+            return "MODEL_3D"
+        return "IMAGE"
+
+    def get_image_url(self, obj):
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
+
+    def get_video_url(self, obj):
+        url = None
+        if obj.video_file:
+            url = obj.video_file.url
+        elif hasattr(obj, 'video_url') and obj.video_url:
+            url = obj.video_url
+        
+        if url:
+            request = self.context.get('request')
+            if request and url.startswith('/'):
+                return request.build_absolute_uri(url)
+            return url
+        return None
+
+    def get_model_url(self, obj):
+        if obj.model_3d:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.model_3d.url)
+            return obj.model_3d.url
+        return None
        
 
 
