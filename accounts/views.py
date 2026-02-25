@@ -7,7 +7,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
-from drf_spectacular.utils import extend_schema
 
 from accounts.serializers import (
     CustomTokenObtainPairSerializer,
@@ -18,15 +17,19 @@ from accounts.serializers import (
     ChangePasswordSerializer,
     UserProfileSerializer,
     VerifyEmailSerializer,
+    EmailChangeRequestSerializer,
+    EmailChangeConfirmSerializer,
 )
 from accounts.permissions import IsAdmin, IsOwnerOrAdmin
 from utils.registration_verification import send_registration_verification
 from utils.password_reset_verification import send_password_reset_verification
+from utils.email_change_verification import send_email_change_verification
+from drf_spectacular.utils import extend_schema
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
-@extend_schema(tags=["User Permissions"])
+@extend_schema(tags=["CRUD Operations and  Permissions"])
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -63,7 +66,7 @@ class UserViewSet(viewsets.ModelViewSet):
         user.save()
         return Response({"status": "User deactivated"})
 
-@extend_schema(tags=["User Authentication"])
+@extend_schema(tags=[" User Authentication "])
 class AuthViewSet(viewsets.GenericViewSet):
     permission_classes = [AllowAny]
     serializer_class = CustomTokenObtainPairSerializer
@@ -194,6 +197,7 @@ class AuthViewSet(viewsets.GenericViewSet):
         token = RefreshToken(refresh_token)
         token.blacklist()
         return Response({"message": "Successfully logged out"})
+    
     @extend_schema(exclude=True)
     @action(detail=False, methods=["post"], permission_classes=[AllowAny])
     def refresh_token(self, request):
@@ -292,26 +296,45 @@ class AuthViewSet(viewsets.GenericViewSet):
             status=status.HTTP_200_OK
         )
 
-@extend_schema(tags=["Update User Information"])
+@extend_schema(tags=["Update User Profile "])
 class ProfileViewSet(viewsets.GenericViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = UserProfileSerializer
 
+    def get_serializer_class(self):
+        if self.action == "email_change_request":
+            return EmailChangeRequestSerializer
+        elif self.action == "email_change_confirm":
+            return EmailChangeConfirmSerializer
+        elif self.action == "change_password":
+            return ChangePasswordSerializer
+        return UserProfileSerializer
+
     @action(detail=False, methods=["get"])
     def me(self, request):
-        serializer = self.get_serializer(request.user)
+        """Get current user profile"""
+        serializer = UserProfileSerializer(request.user)
         return Response(serializer.data)
 
     @action(detail=False, methods=["put", "patch"])
     def update_profile(self, request):
-        serializer = self.get_serializer(request.user, data=request.data, partial=True)
+        """Update user profile (except email - use email_change endpoints for that)"""
+        serializer = UserProfileSerializer(
+            request.user, 
+            data=request.data, 
+            partial=True
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
 
     @action(detail=False, methods=["post"])
     def change_password(self, request):
-        serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
+        """Change user password"""
+        serializer = ChangePasswordSerializer(
+            data=request.data, 
+            context={"request": request}
+        )
         serializer.is_valid(raise_exception=True)
         user = request.user
         user.set_password(serializer.validated_data["new_password"])
@@ -321,3 +344,110 @@ class ProfileViewSet(viewsets.GenericViewSet):
             {"message": "Password changed successfully"}, 
             status=status.HTTP_200_OK
         )
+
+    @action(detail=False, methods=["post"])
+    def email_change_request(self, request):
+       
+        serializer = EmailChangeRequestSerializer(
+            data=request.data,
+            context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+        
+        new_email = serializer.validated_data["new_email"]
+        user = request.user
+        
+        try:
+            # Send verification code to new email
+            send_email_change_verification(user, new_email)
+            
+            return Response(
+                {
+                    "message": "Verification code sent to your new email address.",
+                    "new_email": new_email,
+                },
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            logger.error(f"Failed to send email change verification: {str(e)}")
+            return Response(
+                {
+                    "error": "Failed to send verification email.",
+                    "detail": str(e)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    @action(detail=False, methods=["post"])
+    def email_change_confirm(self, request):
+    
+        serializer = EmailChangeConfirmSerializer(
+            data=request.data,
+            context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+        
+        user = serializer.validated_data["user"]
+        verification = serializer.validated_data["verification"]
+        new_email = serializer.validated_data["new_email"]
+        old_email = user.email
+        
+        # Update email
+        user.email = new_email
+        user.save(update_fields=["email"])
+        
+        # Mark verification as used
+        verification.is_verified = True
+        verification.save(update_fields=["is_verified"])
+        
+        # Generate new JWT tokens with updated email
+        refresh = RefreshToken.for_user(user)
+        refresh["full_name"] = user.full_name
+        refresh["phone_number"] = user.phone_number
+        refresh["email"] = user.email
+        refresh["user_type"] = user.user_type
+        
+        logger.info(f"User {user.id} changed email from {old_email} to {new_email}")
+        
+        return Response(
+            {
+                "message": "Email changed successfully",
+                "user": UserSerializer(user).data,
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=False, methods=["post"])
+    def resend_email_change_code(self, request):
+      
+        serializer = EmailChangeRequestSerializer(
+            data=request.data,
+            context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+        
+        new_email = serializer.validated_data["new_email"]
+        user = request.user
+        
+        try:
+            # Send verification code to new email
+            send_email_change_verification(user, new_email)
+            
+            return Response(
+                {
+                    "message": "A new verification code has been sent to your new email address.",
+                    "new_email": new_email,
+                },
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            logger.error(f"Failed to resend email change verification: {str(e)}")
+            return Response(
+                {
+                    "error": "Failed to send verification email.",
+                    "detail": str(e)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
