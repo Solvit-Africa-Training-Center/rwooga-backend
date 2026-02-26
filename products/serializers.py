@@ -307,7 +307,7 @@ class CustomRequestSerializer(serializers.ModelSerializer):
             'description', 'reference_file', 'budget', 'status',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'user', 'status', 'created_at', 'updated_at']  
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']  
 
     def validate(self, data):
     

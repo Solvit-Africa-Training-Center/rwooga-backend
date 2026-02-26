@@ -73,7 +73,6 @@ class Product(models.Model):
 
     available_sizes = models.CharField(max_length=200, blank=True)
     available_colors = models.CharField(max_length=200, blank=True)
-    available_colors = models.CharField(max_length=200, blank=True)
     available_materials = models.CharField(max_length=200, blank=True)
     
     @property
