@@ -38,8 +38,6 @@ class OrderSerializer(serializers.ModelSerializer):
             product = item.get('product')
             if not product:
                 raise serializers.ValidationError("Each item must have a valid product.")
-            if not product.is_for_sale:
-                raise serializers.ValidationError(f"'{product.name}' is not available for sale.")
             if product.unit_price is None:
                 raise serializers.ValidationError(f"'{product.name}' does not have a price set.")
         return attrs

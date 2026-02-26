@@ -67,7 +67,6 @@ class Product(models.Model):
     measurement_unit = models.CharField(max_length=10, default="cm^3", blank=True, null=True)
  
     published = models.BooleanField(default=False)
-    is_for_sale = models.BooleanField(default=False)
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

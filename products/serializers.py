@@ -128,7 +128,6 @@ class ProductSerializer(serializers.ModelSerializer):
             "final_price",
             "media_details",
             "average_rating",
-            "is_for_sale",
             "images",
         ]
         read_only_fields = [
@@ -167,9 +166,9 @@ class ProductSerializer(serializers.ModelSerializer):
                     pass
 
                 # Portfolio vs Sale Mode
-            is_for_sale = request.data.get('is_for_sale', False)
-            if is_for_sale:
-                fields['unit_price'].required = True
+            # Removed is_for_sale check. Price requirement remains if needed by user, 
+            # but usually, we want to know if it's for sale. 
+            # If the user wants to remove "sale mode", we just don't enforce unit_price based on it here.
         return fields
 
     def validate(self, data):
@@ -188,11 +187,6 @@ class ProductSerializer(serializers.ModelSerializer):
             if not data.get('available_materials'):
                 raise serializers.ValidationError({'material': "Material is required for this category."})
 
-    # Validate sale mode
-        if data.get('is_for_sale') and not data.get('unit_price'):
-            raise serializers.ValidationError({
-                'unit_price': 'Price is required when product is for sale.'})
-    
         return data
     
     def get_final_price(self, obj):
@@ -252,7 +246,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['id', 'name', 'short_description', 'unit_price',
-                  'currency', 'published', 'category_name', 'is_for_sale',
+                  'currency', 'published', 'category_name',
                   'average_rating', 'thumbnail', 'final_price']
  
     def get_thumbnail(self, obj) -> str:
